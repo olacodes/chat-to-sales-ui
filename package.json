@@ -1,0 +1,41 @@
+{
+  "name": "chat-to-sales-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tanstack/react-query": "^5.96.2",
+    "@types/node": "^25.5.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "next": "^16.2.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "^6.0.2",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "postcss": "^8.5.8",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.2"
+  }
+}
