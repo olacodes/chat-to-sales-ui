@@ -61,16 +61,25 @@ function getInitials(name: string): string {
 
 function TableSkeleton() {
   return (
-    <tbody className="divide-y divide-gray-50" aria-busy="true">
+    <tbody className="divide-y" style={{ borderColor: 'var(--ds-border-subtle)' }} aria-busy="true">
       {Array.from({ length: 5 }).map((_, i) => (
         <tr key={i}>
           {Array.from({ length: 6 }).map((_, j) => (
             <td key={j} className="px-5 py-4">
-              <div className="h-3 rounded bg-gray-100 animate-pulse" style={{ width: j === 0 ? '7rem' : j === 3 ? '4rem' : '5rem' }} />
+              <div
+                className="h-3 rounded animate-pulse"
+                style={{
+                  width: j === 0 ? '7rem' : j === 3 ? '4rem' : '5rem',
+                  backgroundColor: 'var(--ds-bg-sunken)',
+                }}
+              />
             </td>
           ))}
           <td className="px-5 py-4">
-            <div className="h-6 w-16 rounded bg-gray-100 animate-pulse" />
+            <div
+              className="h-6 w-16 rounded animate-pulse"
+              style={{ backgroundColor: 'var(--ds-bg-sunken)' }}
+            />
           </td>
         </tr>
       ))}
@@ -133,9 +142,13 @@ export default function OrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Orders</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {isLoading ? 'Loading…' : `${orders.length} total order${orders.length !== 1 ? 's' : ''}`}
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+            Orders
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
+            {isLoading
+              ? 'Loading…'
+              : `${orders.length} total order${orders.length !== 1 ? 's' : ''}`}
           </p>
         </div>
       </div>
@@ -158,8 +171,19 @@ export default function OrdersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 leftElement={
-                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                  <svg
+                    className="h-4 w-4"
+                    style={{ color: 'var(--ds-text-tertiary)' }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
+                    />
                   </svg>
                 }
               />
@@ -193,7 +217,10 @@ export default function OrdersPage() {
       {/* Order table */}
       <Card>
         {/* Status filter tabs */}
-        <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-5 pt-3 pb-0">
+        <div
+          className="flex gap-1 overflow-x-auto px-5 pt-3 pb-0"
+          style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}
+        >
           {FILTER_TABS.map((tab) => {
             const count = tab.value === 'all' ? orders.length : (countByStatus[tab.value] ?? 0);
             const active = filter === tab.value;
@@ -202,19 +229,33 @@ export default function OrdersPage() {
                 key={tab.value}
                 type="button"
                 onClick={() => setFilter(tab.value)}
-                className={[
-                  'flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors',
+                className="flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors"
+                style={
                   active
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700',
-                ].join(' ')}
+                    ? {
+                        borderColor: 'var(--ds-brand-text)',
+                        color: 'var(--ds-brand-text)',
+                      }
+                    : {
+                        borderColor: 'transparent',
+                        color: 'var(--ds-text-secondary)',
+                      }
+                }
               >
                 {tab.label}
                 <span
-                  className={[
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
-                    active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500',
-                  ].join(' ')}
+                  className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                  style={
+                    active
+                      ? {
+                          backgroundColor: 'var(--ds-brand-bg-soft)',
+                          color: 'var(--ds-brand-text)',
+                        }
+                      : {
+                          backgroundColor: 'var(--ds-bg-sunken)',
+                          color: 'var(--ds-text-tertiary)',
+                        }
+                  }
                 >
                   {count}
                 </span>
@@ -227,23 +268,46 @@ export default function OrdersPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-44">
+                <tr
+                  style={{
+                    borderBottom: '1px solid var(--ds-border-base)',
+                    backgroundColor: 'var(--ds-bg-sunken)',
+                  }}
+                >
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-44"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Order ID
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Customer
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-32"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Status
                   </th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">
+                  <th
+                    className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide w-28"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Amount
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-28"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Date
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-36"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Actions
                   </th>
                 </tr>
@@ -258,6 +322,7 @@ export default function OrdersPage() {
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <svg
                           className="h-10 w-10 text-gray-300 mb-3"
+                          style={{ color: 'var(--ds-text-disabled)' }}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -269,12 +334,18 @@ export default function OrdersPage() {
                             d="M20 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zM16 3H8l-1 4h10l-1-4z"
                           />
                         </svg>
-                        <p className="text-sm font-medium text-gray-500">No orders found</p>
+                        <p
+                          className="text-sm font-medium"
+                          style={{ color: 'var(--ds-text-secondary)' }}
+                        >
+                          No orders found
+                        </p>
                         {(search || hasDateFilter || filter !== 'all') && (
                           <button
                             type="button"
                             onClick={clearFilters}
-                            className="mt-2 text-xs text-blue-600 hover:underline"
+                            className="mt-2 text-xs hover:underline"
+                            style={{ color: 'var(--ds-brand-text)' }}
                           >
                             Clear filters
                           </button>
@@ -284,31 +355,57 @@ export default function OrdersPage() {
                   </tr>
                 </tbody>
               ) : (
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y" style={{ borderColor: 'var(--ds-border-subtle)' }}>
                   {filtered.map((order) => {
                     const badge = STATUS_BADGE[order.status] ?? {
                       variant: 'default' as const,
                       label: order.status,
                     };
 
-                    const isConfirming = confirmOrder.isPending && confirmOrder.variables === order.id;
+                    const isConfirming =
+                      confirmOrder.isPending && confirmOrder.variables === order.id;
                     const isPaying = payOrder.isPending && payOrder.variables === order.id;
-                    const isCompleting = completeOrder.isPending && completeOrder.variables === order.id;
+                    const isCompleting =
+                      completeOrder.isPending && completeOrder.variables === order.id;
                     const busy = isConfirming || isPaying || isCompleting;
 
                     return (
-                      <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={order.id}
+                        className="transition-colors"
+                        style={{ '--row-bg': 'transparent' } as React.CSSProperties}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)')
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'transparent')
+                        }
+                      >
                         <td className="px-5 py-3.5">
-                          <span className="font-mono text-xs font-semibold text-gray-700 truncate block max-w-[10rem]" title={order.id}>
+                          <span
+                            className="font-mono text-xs font-semibold truncate block max-w-[10rem]"
+                            style={{ color: 'var(--ds-text-primary)' }}
+                            title={order.id}
+                          >
                             {order.id}
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
-                            <div className="h-7 w-7 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-600 shrink-0">
+                            <div
+                              className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                              style={{
+                                backgroundColor: 'var(--ds-accent-bg-soft)',
+                                color: 'var(--ds-accent-text)',
+                              }}
+                            >
                               {getInitials(order.customerName)}
                             </div>
-                            <span className="text-sm font-medium text-gray-900 truncate max-w-[10rem]" title={order.customerName}>
+                            <span
+                              className="text-sm font-medium truncate max-w-[10rem]"
+                              style={{ color: 'var(--ds-text-primary)' }}
+                              title={order.customerName}
+                            >
                               {order.customerName}
                             </span>
                           </div>
@@ -319,12 +416,18 @@ export default function OrdersPage() {
                           </Badge>
                         </td>
                         <td className="px-5 py-3.5 text-right">
-                          <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                          <span
+                            className="text-sm font-semibold tabular-nums"
+                            style={{ color: 'var(--ds-text-primary)' }}
+                          >
                             {formatCurrency(order.total, order.currency)}
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                          <span
+                            className="text-xs whitespace-nowrap"
+                            style={{ color: 'var(--ds-text-secondary)' }}
+                          >
                             {formatDate(order.createdAt)}
                           </span>
                         </td>
@@ -360,7 +463,12 @@ export default function OrdersPage() {
                               </Button>
                             )}
                             {(order.status === 'completed' || order.status === 'cancelled') && (
-                              <span className="text-xs text-gray-400">—</span>
+                              <span
+                                className="text-xs"
+                                style={{ color: 'var(--ds-text-tertiary)' }}
+                              >
+                                —
+                              </span>
                             )}
                           </div>
                         </td>
@@ -374,8 +482,8 @@ export default function OrdersPage() {
         </CardBody>
 
         {!isLoading && filtered.length > 0 && (
-          <div className="border-t border-gray-100 px-5 py-3">
-            <p className="text-xs text-gray-400">
+          <div className="px-5 py-3" style={{ borderTop: '1px solid var(--ds-border-subtle)' }}>
+            <p className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
               Showing {filtered.length} of {orders.length} order{orders.length !== 1 ? 's' : ''}
               {filter !== 'all' && ` · ${FILTER_TABS.find((t) => t.value === filter)?.label}`}
               {hasDateFilter && ' · date filtered'}

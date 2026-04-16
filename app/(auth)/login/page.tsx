@@ -61,10 +61,13 @@ export default function LoginPage() {
   });
 
   return (
-    <Card className="w-full max-w-md border-gray-200">
+    <Card className="w-full max-w-md">
       <CardBody className="p-6 sm:p-8">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
+          <div
+            className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl text-white"
+            style={{ backgroundColor: 'var(--ds-brand-bg)' }}
+          >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
               <path
                 d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72A7.97 7.97 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
@@ -75,8 +78,12 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">Welcome back</h1>
-          <p className="mt-1 text-sm text-gray-500">Sign in to your ChatToSales account</p>
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+            Welcome back
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
+            Sign in to your ChatToSales account
+          </p>
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit} noValidate>
@@ -121,9 +128,9 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p className="mt-5 text-center text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-700">
+          <Link href="/signup" className="font-medium" style={{ color: 'var(--ds-accent-text)' }}>
             Get started free
           </Link>
         </p>

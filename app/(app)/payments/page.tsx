@@ -57,12 +57,15 @@ function TableSkeleton() {
   return (
     <tbody aria-busy="true">
       {Array.from({ length: 5 }).map((_, i) => (
-        <tr key={i} className="border-b border-gray-50">
+        <tr key={i} style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}>
           {Array.from({ length: 6 }).map((_, j) => (
             <td key={j} className="px-5 py-4">
               <div
-                className="h-3 rounded bg-gray-100 animate-pulse"
-                style={{ width: j === 0 ? '6rem' : j === 2 ? '3.5rem' : j === 1 ? '7rem' : '5rem' }}
+                className="h-3 rounded animate-pulse"
+                style={{
+                  width: j === 0 ? '6rem' : j === 2 ? '3.5rem' : j === 1 ? '7rem' : '5rem',
+                  backgroundColor: 'var(--ds-bg-sunken)',
+                }}
               />
             </td>
           ))}
@@ -81,12 +84,30 @@ interface SummaryCardProps {
   color?: string;
 }
 
-function SummaryCard({ label, value, sub, color = 'text-gray-900' }: SummaryCardProps) {
+function SummaryCard({ label, value, sub, color = 'var(--ds-text-primary)' }: SummaryCardProps) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-xs">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold tabular-nums ${color}`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
+    <div
+      className="rounded-xl p-4"
+      style={{
+        border: '1px solid var(--ds-border-base)',
+        backgroundColor: 'var(--ds-bg-surface)',
+        boxShadow: 'var(--ds-shadow-xs)',
+      }}
+    >
+      <p
+        className="text-xs font-medium uppercase tracking-wide"
+        style={{ color: 'var(--ds-text-secondary)' }}
+      >
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color }}>
+        {value}
+      </p>
+      {sub && (
+        <p className="mt-0.5 text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
+          {sub}
+        </p>
+      )}
     </div>
   );
 }
@@ -132,8 +153,10 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Payments</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+          Payments
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
           {isLoading
             ? 'Loading…'
             : `${payments.length} transaction${payments.length !== 1 ? 's' : ''}`}
@@ -154,19 +177,19 @@ export default function PaymentsPage() {
             label="Total collected"
             value={formatCurrency(totalPaid, displayCurrency)}
             sub={`${paidCount} payment${paidCount !== 1 ? 's' : ''}`}
-            color="text-green-600"
+            color="var(--ds-success-text)"
           />
           <SummaryCard
             label="Pending"
             value={formatCurrency(totalPending, displayCurrency)}
             sub={`${pendingCount} awaiting`}
-            color="text-amber-600"
+            color="var(--ds-warning-text)"
           />
           <SummaryCard
             label="Failed"
             value={String(countByStatus['failed'] ?? 0)}
             sub="transactions"
-            color="text-red-600"
+            color="var(--ds-danger-text)"
           />
           <SummaryCard
             label="Refunded"
@@ -187,7 +210,8 @@ export default function PaymentsPage() {
               onChange={(e) => setSearch(e.target.value)}
               leftElement={
                 <svg
-                  className="h-4 w-4 text-gray-400"
+                  className="h-4 w-4"
+                  style={{ color: 'var(--ds-text-tertiary)' }}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -206,7 +230,8 @@ export default function PaymentsPage() {
             <button
               type="button"
               onClick={() => setSearch('')}
-              className="text-xs text-gray-400 hover:text-gray-700"
+              className="text-xs transition-colors"
+              style={{ color: 'var(--ds-text-tertiary)' }}
             >
               Clear
             </button>
@@ -214,29 +239,45 @@ export default function PaymentsPage() {
         </div>
 
         {/* Status filter tabs */}
-        <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-5 pb-0">
+        <div
+          className="flex gap-1 overflow-x-auto px-5 pb-0"
+          style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}
+        >
           {FILTER_TABS.map((tab) => {
-            const count =
-              tab.value === 'all' ? payments.length : (countByStatus[tab.value] ?? 0);
+            const count = tab.value === 'all' ? payments.length : (countByStatus[tab.value] ?? 0);
             const active = filter === tab.value;
             return (
               <button
                 key={tab.value}
                 type="button"
                 onClick={() => setFilter(tab.value)}
-                className={[
-                  'flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors',
+                className="flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors"
+                style={
                   active
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700',
-                ].join(' ')}
+                    ? {
+                        borderColor: 'var(--ds-brand-text)',
+                        color: 'var(--ds-brand-text)',
+                      }
+                    : {
+                        borderColor: 'transparent',
+                        color: 'var(--ds-text-secondary)',
+                      }
+                }
               >
                 {tab.label}
                 <span
-                  className={[
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
-                    active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500',
-                  ].join(' ')}
+                  className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                  style={
+                    active
+                      ? {
+                          backgroundColor: 'var(--ds-brand-bg-soft)',
+                          color: 'var(--ds-brand-text)',
+                        }
+                      : {
+                          backgroundColor: 'var(--ds-bg-sunken)',
+                          color: 'var(--ds-text-tertiary)',
+                        }
+                  }
                 >
                   {count}
                 </span>
@@ -249,23 +290,46 @@ export default function PaymentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">
+                <tr
+                  style={{
+                    borderBottom: '1px solid var(--ds-border-base)',
+                    backgroundColor: 'var(--ds-bg-sunken)',
+                  }}
+                >
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-36"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Payment ID
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Reference
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-28"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Status
                   </th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">
+                  <th
+                    className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide w-28"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Amount
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-36"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Linked Order
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-40">
+                  <th
+                    className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide w-40"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
                     Date
                   </th>
                 </tr>
@@ -279,7 +343,8 @@ export default function PaymentsPage() {
                     <td colSpan={6}>
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <svg
-                          className="h-10 w-10 text-gray-300 mb-3"
+                          className="h-10 w-10 mb-3"
+                          style={{ color: 'var(--ds-text-disabled)' }}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -291,12 +356,21 @@ export default function PaymentsPage() {
                             d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5z"
                           />
                         </svg>
-                        <p className="text-sm font-medium text-gray-500">No payments found</p>
+                        <p
+                          className="text-sm font-medium"
+                          style={{ color: 'var(--ds-text-secondary)' }}
+                        >
+                          No payments found
+                        </p>
                         {(search || filter !== 'all') && (
                           <button
                             type="button"
-                            onClick={() => { setSearch(''); setFilter('all'); }}
-                            className="mt-2 text-xs text-blue-600 hover:underline"
+                            onClick={() => {
+                              setSearch('');
+                              setFilter('all');
+                            }}
+                            className="mt-2 text-xs hover:underline"
+                            style={{ color: 'var(--ds-brand-text)' }}
                           >
                             Clear filters
                           </button>
@@ -306,7 +380,7 @@ export default function PaymentsPage() {
                   </tr>
                 </tbody>
               ) : (
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y" style={{ borderColor: 'var(--ds-border-subtle)' }}>
                   {filtered.map((payment) => {
                     const { variant, label } = STATUS_BADGE[payment.status] ?? {
                       variant: 'default' as const,
@@ -315,11 +389,21 @@ export default function PaymentsPage() {
                     const dateIso = payment.paidAt ?? payment.createdAt;
 
                     return (
-                      <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={payment.id}
+                        className="transition-colors"
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)')
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'transparent')
+                        }
+                      >
                         {/* Payment ID */}
                         <td className="px-5 py-3.5">
                           <span
-                            className="font-mono text-xs font-semibold text-gray-700"
+                            className="font-mono text-xs font-semibold"
+                            style={{ color: 'var(--ds-text-primary)' }}
                             title={payment.id}
                           >
                             {truncateId(payment.id)}
@@ -330,13 +414,19 @@ export default function PaymentsPage() {
                         <td className="px-5 py-3.5">
                           {payment.reference ? (
                             <span
-                              className="font-mono text-xs text-gray-600 bg-gray-100 rounded px-1.5 py-0.5"
+                              className="font-mono text-xs rounded px-1.5 py-0.5"
+                              style={{
+                                color: 'var(--ds-text-primary)',
+                                backgroundColor: 'var(--ds-bg-sunken)',
+                              }}
                               title={payment.reference}
                             >
                               {truncateRef(payment.reference)}
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400">—</span>
+                            <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
+                              —
+                            </span>
                           )}
                         </td>
 
@@ -350,14 +440,17 @@ export default function PaymentsPage() {
                         {/* Amount */}
                         <td className="px-5 py-3.5 text-right">
                           <span
-                            className={[
-                              'text-sm font-semibold tabular-nums',
-                              payment.status === 'refunded'
-                                ? 'text-gray-400 line-through'
-                                : payment.status === 'failed'
-                                  ? 'text-red-400'
-                                  : 'text-gray-900',
-                            ].join(' ')}
+                            className="text-sm font-semibold tabular-nums"
+                            style={{
+                              color:
+                                payment.status === 'refunded'
+                                  ? 'var(--ds-text-tertiary)'
+                                  : payment.status === 'failed'
+                                    ? 'var(--ds-danger-text)'
+                                    : 'var(--ds-text-primary)',
+                              textDecoration:
+                                payment.status === 'refunded' ? 'line-through' : 'none',
+                            }}
                           >
                             {formatCurrency(payment.amount, payment.currency)}
                           </span>
@@ -367,7 +460,8 @@ export default function PaymentsPage() {
                         <td className="px-5 py-3.5">
                           <a
                             href="/orders"
-                            className="inline-flex items-center gap-1 font-mono text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[8rem]"
+                            className="inline-flex items-center gap-1 font-mono text-xs font-medium hover:underline truncate max-w-[8rem]"
+                            style={{ color: 'var(--ds-accent-text)' }}
                             title={`View order ${payment.orderId}`}
                           >
                             {truncateId(payment.orderId)}
@@ -389,7 +483,10 @@ export default function PaymentsPage() {
 
                         {/* Date */}
                         <td className="px-5 py-3.5">
-                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                          <span
+                            className="text-xs whitespace-nowrap"
+                            style={{ color: 'var(--ds-text-secondary)' }}
+                          >
                             {formatDate(dateIso)}
                           </span>
                         </td>
@@ -403,12 +500,11 @@ export default function PaymentsPage() {
         </CardBody>
 
         {!isLoading && filtered.length > 0 && (
-          <div className="border-t border-gray-100 px-5 py-3">
-            <p className="text-xs text-gray-400">
+          <div className="px-5 py-3" style={{ borderTop: '1px solid var(--ds-border-subtle)' }}>
+            <p className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
               Showing {filtered.length} of {payments.length} transaction
               {payments.length !== 1 ? 's' : ''}
-              {filter !== 'all' &&
-                ` · ${FILTER_TABS.find((t) => t.value === filter)?.label}`}
+              {filter !== 'all' && ` · ${FILTER_TABS.find((t) => t.value === filter)?.label}`}
             </p>
           </div>
         )}

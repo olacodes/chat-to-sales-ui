@@ -46,7 +46,13 @@ interface ChannelCardProps {
   onClick?: () => void;
 }
 
-function ChannelCard({ icon, name, description, disabled = false, onClick }: Readonly<ChannelCardProps>) {
+function ChannelCard({
+  icon,
+  name,
+  description,
+  disabled = false,
+  onClick,
+}: Readonly<ChannelCardProps>) {
   return (
     <button
       type="button"
@@ -54,26 +60,44 @@ function ChannelCard({ icon, name, description, disabled = false, onClick }: Rea
       disabled={disabled}
       className={[
         'group flex w-full items-center gap-4 rounded-xl border px-4 py-4 text-left transition-all',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-        disabled
-          ? 'cursor-not-allowed border-gray-100 bg-gray-50 opacity-60'
-          : 'border-gray-200 bg-white hover:border-blue-400 hover:shadow-sm active:scale-[0.99]',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+        disabled ? 'cursor-not-allowed opacity-60' : 'hover:shadow-sm active:scale-[0.99]',
       ].join(' ')}
+      style={
+        disabled
+          ? {
+              borderColor: 'var(--ds-border-subtle)',
+              backgroundColor: 'var(--ds-bg-sunken)',
+            }
+          : {
+              borderColor: 'var(--ds-border-base)',
+              backgroundColor: 'var(--ds-bg-surface)',
+            }
+      }
     >
       <span className="shrink-0">{icon}</span>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm font-semibold ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
+        <p
+          className="text-sm font-semibold"
+          style={{ color: disabled ? 'var(--ds-text-disabled)' : 'var(--ds-text-primary)' }}
+        >
           {name}
         </p>
-        <p className="mt-0.5 text-xs text-gray-500">{description}</p>
+        <p className="mt-0.5 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
+          {description}
+        </p>
       </div>
       {disabled ? (
-        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-400">
+        <span
+          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
+          style={{ backgroundColor: 'var(--ds-bg-active)', color: 'var(--ds-text-tertiary)' }}
+        >
           Coming soon
         </span>
       ) : (
         <svg
-          className="h-4 w-4 shrink-0 text-gray-300 transition-colors group-hover:text-blue-500"
+          className="h-4 w-4 shrink-0 transition-colors group-hover:text-[var(--ds-accent-text)]"
+          style={{ color: 'var(--ds-text-tertiary)' }}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -90,8 +114,16 @@ function ChannelCard({ icon, name, description, disabled = false, onClick }: Rea
 // ─── Step icons ───────────────────────────────────────────────────────────────
 
 const WhatsAppIcon = (
-  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
-    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-green-600" aria-hidden="true">
+  <div
+    className="flex h-10 w-10 items-center justify-center rounded-xl"
+    style={{ backgroundColor: 'var(--ds-success-bg)' }}
+  >
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      style={{ fill: 'var(--ds-success-text)' }}
+      aria-hidden="true"
+    >
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
       <path d="M12.004 2C6.479 2 2 6.479 2 12.004c0 1.868.518 3.614 1.42 5.113L2 22l5.01-1.391A9.946 9.946 0 0 0 12.004 22C17.525 22 22 17.521 22 12.004 22 6.479 17.525 2 12.004 2zm0 18.16a8.12 8.12 0 0 1-4.178-1.15l-.299-.178-3.094.858.874-3.02-.194-.31a8.144 8.144 0 0 1-1.269-4.356c0-4.512 3.672-8.184 8.184-8.184 4.51 0 8.18 3.672 8.18 8.184 0 4.511-3.67 8.157-8.204 8.157z" />
     </svg>
@@ -132,20 +164,25 @@ export default function OnboardingPage() {
   }
 
   return (
-    <Card className="w-full max-w-md border-gray-200">
+    <Card className="w-full max-w-md">
       <CardBody className="p-6 sm:p-8">
-
         {/* ── Step: select ──────────────────────────────────────────── */}
         {step === 'select' && (
           <div className="animate-in fade-in duration-200">
             <div className="mb-6 text-center">
-              <p className="text-xs font-semibold uppercase tracking-widest text-blue-600">
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: 'var(--ds-brand-text)' }}
+              >
                 Step 1 of 1
               </p>
-              <h1 className="mt-2 text-xl font-semibold text-gray-900">
+              <h1
+                className="mt-2 text-xl font-semibold"
+                style={{ color: 'var(--ds-text-primary)' }}
+              >
                 Connect your sales channel
               </h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
                 Choose where your customers will message you.
               </p>
             </div>
@@ -171,7 +208,7 @@ export default function OnboardingPage() {
               </p>
             )}
 
-            <p className="mt-6 text-center text-xs text-gray-400">
+            <p className="mt-6 text-center text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
               More channels coming soon
             </p>
           </div>
@@ -180,9 +217,13 @@ export default function OnboardingPage() {
         {/* ── Step: connecting ──────────────────────────────────────── */}
         {step === 'connecting' && (
           <div className="animate-in fade-in duration-200 flex flex-col items-center py-6 text-center">
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100">
+            <div
+              className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: 'var(--ds-success-bg)' }}
+            >
               <svg
-                className="h-7 w-7 animate-spin text-green-600"
+                className="h-7 w-7 animate-spin"
+                style={{ color: 'var(--ds-success-text)' }}
                 fill="none"
                 viewBox="0 0 24 24"
                 aria-hidden="true"
@@ -202,8 +243,10 @@ export default function OnboardingPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Connecting to WhatsApp…</h2>
-            <p className="mt-2 text-sm text-gray-500">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+              Connecting to WhatsApp…
+            </h2>
+            <p className="mt-2 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
               Completing verification with Meta. This takes a few seconds.
             </p>
           </div>
@@ -212,9 +255,13 @@ export default function OnboardingPage() {
         {/* ── Step: success ─────────────────────────────────────────── */}
         {step === 'success' && (
           <div className="animate-in fade-in duration-200 flex flex-col items-center py-4 text-center">
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100">
+            <div
+              className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: 'var(--ds-success-bg)' }}
+            >
               <svg
-                className="h-7 w-7 text-green-600"
+                className="h-7 w-7"
+                style={{ color: 'var(--ds-success-text)' }}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -225,28 +272,33 @@ export default function OnboardingPage() {
               </svg>
             </div>
 
-            <h2 className="text-lg font-semibold text-gray-900">WhatsApp connected!</h2>
-            <p className="mt-2 text-sm text-gray-500">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+              WhatsApp connected!
+            </h2>
+            <p className="mt-2 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
               Send a message to your WhatsApp number to test the connection.
             </p>
 
-            <div className="mt-6 w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-left">
-              <p className="text-xs font-medium text-gray-500">Next step</p>
-              <p className="mt-0.5 text-sm text-gray-700">
+            <div
+              className="mt-6 w-full rounded-xl px-4 py-3 text-left"
+              style={{
+                border: '1px solid var(--ds-border-subtle)',
+                backgroundColor: 'var(--ds-bg-sunken)',
+              }}
+            >
+              <p className="text-xs font-medium" style={{ color: 'var(--ds-text-secondary)' }}>
+                Next step
+              </p>
+              <p className="mt-0.5 text-sm" style={{ color: 'var(--ds-text-primary)' }}>
                 Go to your dashboard and start managing conversations.
               </p>
             </div>
 
-            <Button
-              className="mt-6 w-full"
-              size="lg"
-              onClick={() => router.push('/conversations')}
-            >
+            <Button className="mt-6 w-full" size="lg" onClick={() => router.push('/conversations')}>
               Go to Dashboard
             </Button>
           </div>
         )}
-
       </CardBody>
     </Card>
   );

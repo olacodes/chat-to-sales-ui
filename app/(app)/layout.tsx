@@ -1,14 +1,8 @@
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Topbar } from '@/components/layout/Topbar';
+import { ShellClient } from '@/components/layout/ShellClient';
+
+// Read at server render time — no client bundle exposure needed.
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? 'default';
 
 export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
-  );
+  return <ShellClient tenantId={TENANT_ID}>{children}</ShellClient>;
 }

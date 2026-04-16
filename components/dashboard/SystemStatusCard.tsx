@@ -61,7 +61,9 @@ export function SystemStatusCard() {
         ) : (
           <ul className="space-y-2">
             <li className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">API</span>
+              <span className="text-sm" style={{ color: 'var(--ds-text-primary)' }}>
+                API
+              </span>
               <Badge variant={variant} dot>
                 {label}
               </Badge>
@@ -69,12 +71,20 @@ export function SystemStatusCard() {
             {data && (
               <>
                 <li className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Version</span>
-                  <span className="text-xs font-mono text-gray-500">{data.version}</span>
+                  <span className="text-sm" style={{ color: 'var(--ds-text-primary)' }}>
+                    Version
+                  </span>
+                  <span className="text-xs font-mono" style={{ color: 'var(--ds-text-secondary)' }}>
+                    {data.version}
+                  </span>
                 </li>
                 <li className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Uptime</span>
-                  <span className="text-xs text-gray-500">{Math.floor(data.uptime / 60)}m</span>
+                  <span className="text-sm" style={{ color: 'var(--ds-text-primary)' }}>
+                    Uptime
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
+                    {Math.floor(data.uptime / 60)}m
+                  </span>
                 </li>
               </>
             )}

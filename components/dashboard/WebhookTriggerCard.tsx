@@ -50,14 +50,23 @@ export function WebhookTriggerCard() {
       <CardBody>
         <div className="space-y-3">
           <div className="flex flex-col gap-1">
-            <label htmlFor="webhook-event" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="webhook-event"
+              className="text-sm font-medium"
+              style={{ color: 'var(--ds-text-primary)' }}
+            >
               Event
             </label>
             <select
               id="webhook-event"
               value={selectedEvent}
               onChange={(e) => setSelectedEvent(e.target.value as WebhookEvent)}
-              className="h-9 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-9 w-full rounded-lg px-3 text-sm focus:outline-none"
+              style={{
+                border: '1px solid var(--ds-border-base)',
+                backgroundColor: 'var(--ds-bg-sunken)',
+                color: 'var(--ds-text-primary)',
+              }}
             >
               {EVENTS.map((ev) => (
                 <option key={ev} value={ev}>
@@ -85,7 +94,12 @@ export function WebhookTriggerCard() {
               <Badge variant="success" dot>
                 Delivered
               </Badge>
-              <span className="text-xs text-gray-500 font-mono truncate">{responseId}</span>
+              <span
+                className="text-xs font-mono truncate"
+                style={{ color: 'var(--ds-text-secondary)' }}
+              >
+                {responseId}
+              </span>
             </div>
           )}
           {status === 'error' && (

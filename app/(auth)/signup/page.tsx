@@ -61,10 +61,13 @@ export default function SignupPage() {
   });
 
   return (
-    <Card className="w-full max-w-md border-gray-200">
+    <Card className="w-full max-w-md">
       <CardBody className="p-6 sm:p-8">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+          <div
+            className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ backgroundColor: 'var(--ds-accent-bg-soft)', color: 'var(--ds-accent-text)' }}
+          >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
               <path
                 d="M6 8.5C6 6.01472 8.01472 4 10.5 4H13.5C15.9853 4 18 6.01472 18 8.5V9H6V8.5Z"
@@ -79,8 +82,12 @@ export default function SignupPage() {
               <circle cx="12" cy="15.5" r="1.5" fill="currentColor" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">Create your account</h1>
-          <p className="mt-1 text-sm text-gray-500">Start selling on WhatsApp in minutes</p>
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+            Create your account
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
+            Start selling on WhatsApp in minutes
+          </p>
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit} noValidate>
@@ -125,9 +132,9 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p className="mt-5 text-center text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+          <Link href="/login" className="font-medium" style={{ color: 'var(--ds-accent-text)' }}>
             Sign in
           </Link>
         </p>

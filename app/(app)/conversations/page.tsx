@@ -9,11 +9,7 @@ import { WsEventSimulator } from '@/components/conversations/WsEventSimulator';
 import { useConversationsRealtime } from '@/lib/hooks/useConversationsRealtime';
 import { webhookService } from '@/lib/api/services';
 import { ApiError } from '@/lib/api/client';
-import {
-  useConversations,
-  useMessages,
-  useSendMessage,
-} from '@/hooks/useConversations';
+import { useConversations, useMessages, useSendMessage } from '@/hooks/useConversations';
 
 // ─── Inbound message simulator ────────────────────────────────────────────────
 
@@ -26,7 +22,7 @@ function InboundMessageForm() {
 
   const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? 'tenant-abc-123';
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!phone.trim() || !text.trim()) return;
     setLoading(true);
@@ -50,10 +46,16 @@ function InboundMessageForm() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-gray-50 p-8">
+    <div
+      className="flex flex-1 items-center justify-center p-8"
+      style={{ backgroundColor: 'var(--ds-bg-sunken)' }}
+    >
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+          <div
+            className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
+            style={{ backgroundColor: 'var(--ds-brand-bg-soft)', color: 'var(--ds-brand-text)' }}
+          >
             <svg
               className="h-6 w-6"
               fill="none"
@@ -68,42 +70,78 @@ function InboundMessageForm() {
               />
             </svg>
           </div>
-          <h2 className="text-sm font-semibold text-gray-900">No active conversations</h2>
-          <p className="mt-1 text-xs text-gray-500">
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+            No active conversations
+          </h2>
+          <p className="mt-1 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
             Simulate an inbound message to start a conversation via the backend webhook.
           </p>
-          <p className="mt-0.5 text-[10px] text-gray-400">
+          <p className="mt-0.5 text-[10px]" style={{ color: 'var(--ds-text-tertiary)' }}>
             Tenant: <span className="font-mono">{tenantId}</span>
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block mb-1 text-xs font-medium text-gray-700">Customer phone</label>
+            <label
+              htmlFor="inbound-phone"
+              className="block mb-1 text-xs font-medium"
+              style={{ color: 'var(--ds-text-secondary)' }}
+            >
+              Customer phone
+            </label>
             <input
+              id="inbound-phone"
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+2348012345678"
               required
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition-shadow"
+              style={{
+                border: '1px solid var(--ds-border-base)',
+                backgroundColor: 'var(--ds-bg-surface)',
+                color: 'var(--ds-text-primary)',
+              }}
             />
           </div>
           <div>
-            <label className="block mb-1 text-xs font-medium text-gray-700">Message</label>
+            <label
+              htmlFor="inbound-message"
+              className="block mb-1 text-xs font-medium"
+              style={{ color: 'var(--ds-text-secondary)' }}
+            >
+              Message
+            </label>
             <textarea
+              id="inbound-message"
               rows={3}
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Hi, I want to place an order"
               required
-              className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="w-full resize-none rounded-lg px-3 py-2 text-sm focus:outline-none transition-shadow"
+              style={{
+                border: '1px solid var(--ds-border-base)',
+                backgroundColor: 'var(--ds-bg-surface)',
+                color: 'var(--ds-text-primary)',
+              }}
             />
           </div>
 
-          {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+          {error && (
+            <p
+              className="text-xs rounded-lg px-3 py-2"
+              style={{ color: 'var(--ds-danger-text)', backgroundColor: 'var(--ds-danger-bg)' }}
+            >
+              {error}
+            </p>
+          )}
           {sent && (
-            <p className="text-xs text-green-600 bg-green-50 rounded-lg px-3 py-2">
+            <p
+              className="text-xs rounded-lg px-3 py-2"
+              style={{ color: 'var(--ds-success-text)', backgroundColor: 'var(--ds-success-bg)' }}
+            >
               ✓ Sent — waiting for WebSocket event…
             </p>
           )}
@@ -111,7 +149,14 @@ function InboundMessageForm() {
           <button
             type="submit"
             disabled={loading || !phone.trim() || !text.trim()}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            style={{ backgroundColor: 'var(--ds-brand-bg)' }}
+            onMouseEnter={(e) => {
+              if (!loading) e.currentTarget.style.backgroundColor = 'var(--ds-brand-bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--ds-brand-bg)';
+            }}
           >
             {loading ? 'Sending…' : 'Send Inbound Message'}
           </button>
@@ -126,6 +171,8 @@ function InboundMessageForm() {
 export default function ConversationsPage() {
   const activeConversationId = useAppStore((s) => s.activeConversationId);
   const setActiveConversation = useAppStore((s) => s.setActiveConversation);
+  const updateConversation = useAppStore((s) => s.updateConversation);
+  const orders = useAppStore((s) => s.orders);
 
   // ── React Query data ───────────────────────────────────────────────────────
   const {
@@ -155,8 +202,15 @@ export default function ConversationsPage() {
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId) ?? null;
 
+  // Derive the order linked to the active conversation
+  const linkedOrder = orders.find((o) => o.conversationId === activeConversationId) ?? null;
+
   function handleSendMessage(conversationId: string, content: string) {
     sendMessage({ conversationId, payload: { sender_role: 'assistant', content } });
+  }
+
+  function handleMarkResolved(conversationId: string) {
+    updateConversation(conversationId, { status: 'resolved' });
   }
 
   return (
@@ -182,6 +236,8 @@ export default function ConversationsPage() {
           onSendMessage={handleSendMessage}
           isSending={isSending}
           wsStatus={status}
+          linkedOrder={linkedOrder}
+          onMarkResolved={handleMarkResolved}
         />
       ) : (
         <InboundMessageForm />

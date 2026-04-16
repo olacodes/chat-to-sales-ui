@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import type { Conversation, Message } from '@/store';
+import { useEffect, useRef, useState } from 'react';
+import type { Conversation, Message, Order } from '@/store';
 import type { ConnectionStatus } from '@/lib/websocket/client';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
+import { InlineOrderCard } from './InlineOrderCard';
 import { Badge } from '@/components/ui/Badge';
 
 interface ChatWindowProps {
@@ -20,9 +21,15 @@ interface ChatWindowProps {
   onSendMessage: (conversationId: string, content: string) => void;
   isSending?: boolean;
   wsStatus: ConnectionStatus;
+  /** Linked order for this conversation — shown as InlineOrderCard above input */
+  linkedOrder?: Order | null;
+  /** Opens the order detail drawer/modal */
+  onViewOrderDetails?: (orderId: string) => void;
+  /** Marks the conversation as resolved */
+  onMarkResolved?: (conversationId: string) => void;
 }
 
-const statusBadge = {
+const statusBadge: Record<Conversation['status'], React.ReactElement> = {
   open: (
     <Badge variant="success" dot>
       Open
@@ -38,26 +45,61 @@ const statusBadge = {
       Resolved
     </Badge>
   ),
-} as const;
+};
 
-const wsBanner: Record<ConnectionStatus, { show: boolean; text: string; cls: string }> = {
-  connected: { show: false, text: '', cls: '' },
+type WsBannerConfig = {
+  show: boolean;
+  text: string;
+  bg: string;
+  text_color: string;
+  border: string;
+};
+const wsBanner: Record<ConnectionStatus, WsBannerConfig> = {
+  connected: { show: false, text: '', bg: '', text_color: '', border: '' },
   connecting: {
     show: true,
     text: 'Connecting to live updates…',
-    cls: 'bg-amber-50 text-amber-700 border-amber-200',
+    bg: 'var(--ds-warning-bg)',
+    text_color: 'var(--ds-warning-text)',
+    border: 'var(--ds-warning-border)',
   },
   disconnected: {
     show: true,
     text: 'Disconnected — reconnecting…',
-    cls: 'bg-red-50   text-red-700   border-red-200',
+    bg: 'var(--ds-danger-bg)',
+    text_color: 'var(--ds-danger-text)',
+    border: 'var(--ds-danger-border)',
   },
   error: {
     show: true,
     text: 'Connection error — retrying…',
-    cls: 'bg-red-50   text-red-700   border-red-200',
+    bg: 'var(--ds-danger-bg)',
+    text_color: 'var(--ds-danger-text)',
+    border: 'var(--ds-danger-border)',
   },
 };
+
+const SKELETON_WIDTHS = [70, 50, 78, 45] as const;
+const SKELETON_IDS = ['skel-a', 'skel-b', 'skel-c', 'skel-d'] as const;
+
+function MessageSkeleton() {
+  return (
+    <div className="space-y-3" aria-label="Loading messages" aria-busy="true">
+      {SKELETON_IDS.map((skId, i) => (
+        <div
+          key={skId}
+          className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}
+          aria-hidden="true"
+        >
+          <div
+            className="h-9 rounded-2xl animate-pulse"
+            style={{ width: `${SKELETON_WIDTHS[i]}%`, backgroundColor: 'var(--ds-bg-elevated)' }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function ChatWindow({
   conversation,
@@ -69,44 +111,114 @@ export function ChatWindow({
   onSendMessage,
   isSending = false,
   wsStatus,
-}: ChatWindowProps) {
+  linkedOrder,
+  onViewOrderDetails,
+  onMarkResolved,
+}: Readonly<ChatWindowProps>) {
   const { id, customerName, customerIdentifier, status } = conversation;
-  // Prefer explicit prop (React Query) over embedded store messages
   const messages = messagesProp ?? conversation.messages;
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [orderCollapsed, setOrderCollapsed] = useState(false);
 
-  // Scroll to bottom whenever messages change
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const banner = wsBanner[wsStatus];
 
+  function renderMessages() {
+    if (isLoadingMessages && messages.length === 0) {
+      return <MessageSkeleton />;
+    }
+    if (messages.length === 0) {
+      return (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-sm" style={{ color: 'var(--ds-text-tertiary)' }}>
+            No messages yet. Start the conversation.
+          </p>
+        </div>
+      );
+    }
+    return messages.map((msg, idx) => {
+      const prev = messages[idx - 1];
+      const isGrouped = Boolean(prev?.role === msg.role);
+      return (
+        <MessageBubble
+          key={msg.id}
+          message={msg}
+          customerName={customerName}
+          isGrouped={isGrouped}
+        />
+      );
+    });
+  }
+
+  // Customer initials for avatar
+  const initials = customerName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-white">
-      {/* Chat header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 bg-white shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0">
-            {customerName
-              .split(' ')
-              .map((w) => w[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2)}
+    <div
+      className="flex h-full flex-1 flex-col overflow-hidden"
+      style={{ backgroundColor: 'var(--ds-bg-surface)' }}
+    >
+      {/* ── Chat header ─────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-between px-5 py-3 shrink-0"
+        style={{
+          borderBottom: '1px solid var(--ds-border-base)',
+          backgroundColor: 'var(--ds-bg-surface)',
+        }}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Avatar */}
+          <div
+            className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+            style={{
+              backgroundColor: 'var(--ds-brand-bg-soft)',
+              color: 'var(--ds-brand-text)',
+            }}
+            aria-hidden="true"
+          >
+            {initials}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 leading-tight">{customerName}</p>
-            <p className="text-xs text-gray-500">{customerIdentifier}</p>
+          <div className="min-w-0">
+            <p
+              className="text-sm font-semibold leading-tight truncate"
+              style={{ color: 'var(--ds-text-primary)' }}
+            >
+              {customerName}
+            </p>
+            <p className="text-xs truncate" style={{ color: 'var(--ds-text-secondary)' }}>
+              {customerIdentifier}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           {statusBadge[status]}
-          {status !== 'resolved' && (
+          {status !== 'resolved' && onMarkResolved && (
             <button
               type="button"
-              className="text-xs font-medium text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+              onClick={() => onMarkResolved(id)}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: 'var(--ds-text-secondary)',
+                border: '1px solid var(--ds-border-base)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)';
+                e.currentTarget.style.color = 'var(--ds-text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '';
+                e.currentTarget.style.color = 'var(--ds-text-secondary)';
+              }}
             >
               Mark resolved
             </button>
@@ -114,12 +226,24 @@ export function ChatWindow({
         </div>
       </div>
 
-      {/* WS connection banner */}
+      {/* ── WS connection banner ─────────────────────────────── */}
       {banner.show && (
         <div
-          className={`flex items-center gap-2 border-b px-5 py-2 text-xs font-medium ${banner.cls}`}
+          className="flex items-center gap-2 px-5 py-2 text-xs font-medium shrink-0"
+          style={{
+            backgroundColor: banner.bg,
+            color: banner.text_color,
+            borderBottom: `1px solid ${banner.border}`,
+          }}
+          role="status"
+          aria-live="polite"
         >
-          <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+          <svg
+            className="h-3.5 w-3.5 animate-spin shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <circle
               className="opacity-25"
               cx="12"
@@ -138,59 +262,54 @@ export function ChatWindow({
         </div>
       )}
 
-      {/* Messages area */}
-      <div className="relative flex-1 overflow-y-auto scrollbar-thin px-5 py-4 space-y-3 bg-gray-50">
-        {/* Load earlier button */}
+      {/* ── Messages area ────────────────────────────────────── */}
+      <div
+        className="relative flex-1 overflow-y-auto px-5 py-4 space-y-3"
+        style={{
+          backgroundColor: 'var(--ds-bg-sunken)',
+          scrollbarWidth: 'thin',
+        }}
+        aria-label="Messages"
+        role="log"
+        aria-live="polite"
+      >
+        {/* Load earlier */}
         {hasMoreMessages && (
           <div className="flex justify-center pb-2">
             <button
               type="button"
               onClick={onLoadMoreMessages}
               disabled={isFetchingMoreMessages}
-              className="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50 font-medium"
+              className="text-xs font-medium disabled:opacity-50 transition-opacity"
+              style={{ color: 'var(--ds-brand-text)' }}
             >
               {isFetchingMoreMessages ? 'Loading…' : 'Load earlier messages'}
             </button>
           </div>
         )}
 
-        {isLoadingMessages && messages.length === 0 ? (
-          // Loading skeleton
-          <div className="space-y-3">
-            {[80, 60, 72, 50].map((w, i) => (
-              <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className="h-8 rounded-2xl bg-gray-200 animate-pulse"
-                  style={{ width: `${w}%` }}
-                />
-              </div>
-            ))}
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-gray-400">No messages yet. Start the conversation.</p>
-          </div>
-        ) : (
-          messages.map((msg, idx) => {
-            const prev = messages[idx - 1];
-            const isGrouped = Boolean(prev && prev.role === msg.role);
-            return (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                customerName={customerName}
-                isGrouped={isGrouped}
-              />
-            );
-          })
-        )}
+        {/* Messages */}
+        {renderMessages()}
+
+        {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* ── Inline order card ────────────────────────────────── */}
+      {linkedOrder && (
+        <InlineOrderCard
+          order={linkedOrder}
+          onViewDetails={onViewOrderDetails}
+          collapsed={orderCollapsed}
+          onToggleCollapse={() => setOrderCollapsed((prev) => !prev)}
+        />
+      )}
+
+      {/* ── Message input ────────────────────────────────────── */}
       <ChatInput
         onSend={(content) => onSendMessage(id, content)}
         disabled={status === 'resolved'}
+        isSending={isSending}
       />
     </div>
   );

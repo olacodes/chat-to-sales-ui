@@ -84,7 +84,8 @@ export function WsEventSimulator({ activeConversationId }: SimulatorProps) {
         type="button"
         onClick={() => setOpen(true)}
         title="Open WS simulator"
-        className="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg hover:bg-gray-700 transition-colors text-base"
+        className="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-colors text-base"
+        style={{ backgroundColor: 'var(--ds-bg-inverse)', color: 'var(--ds-text-inverse)' }}
       >
         ⚡
       </button>
@@ -92,13 +93,26 @@ export function WsEventSimulator({ activeConversationId }: SimulatorProps) {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-64 rounded-xl border border-gray-200 bg-white shadow-xl">
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2.5">
-        <span className="text-xs font-semibold text-gray-700">WS Simulator</span>
+    <div
+      className="fixed bottom-6 right-6 z-50 w-64 rounded-xl shadow-xl"
+      style={{
+        border: '1px solid var(--ds-border-base)',
+        backgroundColor: 'var(--ds-bg-surface)',
+        boxShadow: 'var(--ds-shadow-lg)',
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-4 py-2.5"
+        style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}
+      >
+        <span className="text-xs font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+          WS Simulator
+        </span>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-gray-400 hover:text-gray-600 text-sm"
+          className="text-sm transition-colors"
+          style={{ color: 'var(--ds-text-tertiary)' }}
         >
           ✕
         </button>
@@ -110,7 +124,20 @@ export function WsEventSimulator({ activeConversationId }: SimulatorProps) {
             key={ev.type}
             type="button"
             onClick={() => fire(ev)}
-            className="w-full text-left rounded-lg border border-gray-100 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:border-gray-200 transition-colors"
+            className="w-full text-left rounded-lg px-3 py-2 text-xs transition-colors"
+            style={{
+              border: '1px solid var(--ds-border-subtle)',
+              color: 'var(--ds-text-primary)',
+              backgroundColor: 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)';
+              e.currentTarget.style.borderColor = 'var(--ds-border-base)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.borderColor = 'var(--ds-border-subtle)';
+            }}
           >
             {ev.label}
           </button>
@@ -118,7 +145,13 @@ export function WsEventSimulator({ activeConversationId }: SimulatorProps) {
       </div>
 
       {lastFired && (
-        <div className="border-t border-gray-100 px-4 py-2 text-[10px] text-green-600">
+        <div
+          className="px-4 py-2 text-[10px]"
+          style={{
+            borderTop: '1px solid var(--ds-border-subtle)',
+            color: 'var(--ds-success-text)',
+          }}
+        >
           ✓ Fired: {lastFired}
         </div>
       )}
