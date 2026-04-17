@@ -1,7 +1,10 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useWsStatus } from '@/lib/hooks/useWebSocket';
+import { logout } from '@/lib/auth/service';
 import type { ConnectionStatus } from '@/lib/websocket/client';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
@@ -93,48 +96,143 @@ function TenantSwitcher({ tenantId }: Readonly<{ tenantId: string }>) {
   );
 }
 
-/* ── User Profile button ─────────────────────────────────────── */
+/* ── User menu with dropdown ─────────────────────────────────── */
 
-interface UserProfileProps {
-  /** Display name — shown on md+ screens. */
-  name: string;
-  /** Email — shown as tooltip. */
-  email: string;
-  /** Two-letter initials, auto-derived when omitted. */
-  initials?: string;
+/** Derive a readable display name from an email address. */
+function nameFromEmail(email: string): string {
+  const prefix = email.split('@')[0] ?? '';
+  return prefix
+    .replaceAll('.', ' ')
+    .replaceAll('_', ' ')
+    .replaceAll(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function UserProfile({ name, email, initials }: Readonly<UserProfileProps>) {
-  const letters = initials ?? name.slice(0, 2).toUpperCase();
+function UserMenu() {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const email = user?.email ?? '';
+  const displayName = nameFromEmail(email);
+  const letters = (displayName.slice(0, 2) || email.slice(0, 2)).toUpperCase() || 'U';
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    function onMouseDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [open]);
+
+  function handleLogout() {
+    logout();
+    router.push('/login');
+  }
 
   return (
-    <button
-      type="button"
-      aria-label={`Account menu for ${name}`}
-      title={email}
-      className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 transition-colors duration-150 ml-1"
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)')}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-    >
-      {/* Avatar circle */}
-      <span
-        className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-        style={{
-          backgroundColor: 'var(--ds-brand-bg-soft)',
-          color: 'var(--ds-brand-text)',
-        }}
-        aria-hidden="true"
+    <div ref={menuRef} className="relative ml-1">
+      {/* Trigger button */}
+      <button
+        type="button"
+        aria-label="Account menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 transition-colors duration-150"
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)')}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
-        {letters}
-      </span>
-      {/* Name — hidden on small screens */}
-      <span
-        className="hidden md:block text-xs font-medium"
-        style={{ color: 'var(--ds-text-secondary)' }}
-      >
-        {name}
-      </span>
-    </button>
+        {/* Avatar circle */}
+        <span
+          className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+          style={{
+            backgroundColor: 'var(--ds-brand-bg-soft)',
+            color: 'var(--ds-brand-text)',
+          }}
+          aria-hidden="true"
+        >
+          {letters}
+        </span>
+        {/* Name — hidden on small screens */}
+        <span
+          className="hidden md:block text-xs font-medium"
+          style={{ color: 'var(--ds-text-secondary)' }}
+        >
+          {displayName || email}
+        </span>
+        {/* Chevron */}
+        <svg
+          className={`hidden md:block h-3 w-3 flex-shrink-0 transition-transform duration-150 ${
+            open ? 'rotate-180' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          strokeWidth={2.5}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1.5 z-50 min-w-[200px] rounded-xl overflow-hidden"
+          style={{
+            backgroundColor: 'var(--ds-bg-elevated)',
+            border: '1px solid var(--ds-border-base)',
+            boxShadow: 'var(--ds-shadow-lg)',
+          }}
+          role="menu"
+        >
+          {/* User info header */}
+          <div
+            className="px-3 py-2.5"
+            style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}
+          >
+            <p className="text-xs font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+              {displayName || 'User'}
+            </p>
+            <p className="text-[11px] truncate" style={{ color: 'var(--ds-text-tertiary)' }}>
+              {email}
+            </p>
+          </div>
+          {/* Actions */}
+          <div className="p-1">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors duration-150"
+              style={{ color: 'var(--ds-danger-text)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ds-danger-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <svg
+                className="h-3.5 w-3.5 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -142,14 +240,14 @@ function UserProfile({ name, email, initials }: Readonly<UserProfileProps>) {
 
 interface TopbarProps {
   onMenuClick: () => void;
-  tenantId: string;
 }
 
-export function Topbar({ onMenuClick, tenantId }: Readonly<TopbarProps>) {
+export function Topbar({ onMenuClick }: Readonly<TopbarProps>) {
   const pathname = usePathname();
   const title = getTitle(pathname);
   const wsStatus = useWsStatus();
   const { label, color, pulse } = statusConfig[wsStatus];
+  const tenantId = useAuthStore((s) => s.tenantId) ?? '';
 
   return (
     <header
@@ -251,8 +349,8 @@ export function Topbar({ onMenuClick, tenantId }: Readonly<TopbarProps>) {
           />
         </button>
 
-        {/* User profile */}
-        <UserProfile name="Admin" email="admin@chattosales.io" initials="AD" />
+        {/* User menu */}
+        <UserMenu />
       </div>
     </header>
   );

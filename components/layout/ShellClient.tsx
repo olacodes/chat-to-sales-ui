@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { restoreSession } from '@/lib/auth/service';
 
 /**
  * ShellClient manages the sidebar open/close state and renders the
@@ -17,18 +18,24 @@ import { Topbar } from './Topbar';
 
 interface ShellClientProps {
   children: React.ReactNode;
-  tenantId: string;
 }
 
-export function ShellClient({ children, tenantId }: Readonly<ShellClientProps>) {
+export function ShellClient({ children }: Readonly<ShellClientProps>) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Restore JWT from sessionStorage into memory on page reload.
+  // The middleware already verified the presence cookie, so we just
+  // need to repopulate the in-memory token for API calls.
+  useEffect(() => {
+    restoreSession();
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--ds-bg-base)' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        <Topbar onMenuClick={() => setSidebarOpen(true)} tenantId={tenantId} />
+        <Topbar onMenuClick={() => setSidebarOpen(true)} />
         <main
           className="flex-1 overflow-y-auto scrollbar-thin p-6"
           style={{ backgroundColor: 'var(--ds-bg-base)' }}

@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { apiClient, ApiError } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/client';
+import { loginWithEmail, loginWithGoogle } from '@/lib/auth/service';
 
 const loginSchema = z.object({
   email: z.email('Enter a valid email address'),
@@ -18,14 +19,30 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-async function loginWithEmail(payload: LoginFormValues) {
-  return apiClient.post('/api/v1/auth/login', payload);
+function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 401 || error.status === 404) return 'Invalid email or password.';
+    return error.body.message || 'Something went wrong. Please try again.';
+  }
+  if (error instanceof Error) return error.message;
+  return 'Could not sign in. Please try again.';
 }
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const submittingRef = useRef(false);
+
+  /** Destination after successful login — defaults to dashboard */
+  function getNextUrl() {
+    const next = searchParams.get('next');
+    // Only allow relative paths to prevent open redirect attacks
+    if (next && next.startsWith('/') && !next.startsWith('//')) return next;
+    return '/dashboard';
+  }
 
   const {
     register,
@@ -33,32 +50,43 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
+  const isBusy = isSubmitting || isGoogleLoading;
+
   const onSubmit = handleSubmit(async (values) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitError(null);
     setIsSuccess(false);
 
     try {
-      await loginWithEmail(values);
+      await loginWithEmail(values.email, values.password);
       setIsSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 700);
+      setTimeout(() => router.push(getNextUrl()), 700);
     } catch (error) {
-      let message = 'Invalid email or password.';
-
-      if (error instanceof ApiError) {
-        message = error.status === 401 ? 'Invalid email or password.' : error.body.message;
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-
-      setSubmitError(message);
+      setSubmitError(getErrorMessage(error));
+    } finally {
+      submittingRef.current = false;
     }
   });
+
+  async function handleGoogleLogin() {
+    if (isBusy) return;
+    setSubmitError(null);
+    setIsGoogleLoading(true);
+
+    try {
+      await loginWithGoogle('mock_google_token');
+      setIsSuccess(true);
+      setTimeout(() => router.push(getNextUrl()), 700);
+    } catch (error) {
+      setSubmitError(getErrorMessage(error));
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
 
   return (
     <Card className="w-full max-w-md">
@@ -92,7 +120,7 @@ export default function LoginPage() {
             label="Email"
             placeholder="you@company.com"
             autoComplete="email"
-            disabled={isSubmitting}
+            disabled={isBusy}
             error={errors.email?.message}
             {...register('email')}
           />
@@ -102,28 +130,41 @@ export default function LoginPage() {
             label="Password"
             placeholder="Your password"
             autoComplete="current-password"
-            disabled={isSubmitting}
+            disabled={isBusy}
             error={errors.password?.message}
             {...register('password')}
           />
 
           {submitError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p
+              className="rounded-lg px-3 py-2 text-sm"
+              style={{ backgroundColor: 'var(--ds-danger-bg)', color: 'var(--ds-danger-text)' }}
+            >
               {submitError}
             </p>
           )}
 
           {isSuccess && (
-            <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-              Signed in. Redirecting to dashboard...
+            <p
+              className="rounded-lg px-3 py-2 text-sm"
+              style={{ backgroundColor: 'var(--ds-success-bg)', color: 'var(--ds-success-text)' }}
+            >
+              Signed in. Redirecting to dashboard\u2026
             </p>
           )}
 
-          <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting}>
+          <Button type="submit" className="w-full" loading={isSubmitting} disabled={isBusy}>
             Sign in
           </Button>
 
-          <Button type="button" variant="outline" className="w-full" disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={isBusy}
+            loading={isGoogleLoading}
+            onClick={handleGoogleLogin}
+          >
             Continue with Google
           </Button>
         </form>

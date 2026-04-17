@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/useAuthStore';
 import { wsConnection } from '@/lib/websocket/connection';
 import { conversationKeys } from '@/hooks/useConversations';
 import { orderKeys } from '@/hooks/useOrders';
@@ -18,7 +19,6 @@ import type { Conversation, Message, Order, Payment } from '@/store';
 import type { PagedOut } from '@/lib/api/types';
 
 interface WebSocketProviderProps {
-  tenantId: string;
   children: React.ReactNode;
 }
 
@@ -77,8 +77,9 @@ function patchConversation(
  *   conversation.started → invalidate conversations list
  *   conversation.closed  → patch conversation status to 'resolved'
  */
-export function WebSocketProvider({ tenantId, children }: WebSocketProviderProps) {
+export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const qc = useQueryClient();
+  const tenantId = useAuthStore((s) => s.tenantId) ?? '';
 
   useEffect(() => {
     wsConnection.connect(tenantId);
@@ -137,17 +138,15 @@ export function WebSocketProvider({ tenantId, children }: WebSocketProviderProps
         );
 
         // Patch conversation detail if it's already in cache
-        qc.setQueryData<Conversation>(
-          conversationKeys.detail(p.conversationId),
-          (old) =>
-            old
-              ? {
-                  ...old,
-                  lastMessage: p.content,
-                  lastMessageAt: p.timestamp,
-                  messages: [...old.messages, message],
-                }
-              : old,
+        qc.setQueryData<Conversation>(conversationKeys.detail(p.conversationId), (old) =>
+          old
+            ? {
+                ...old,
+                lastMessage: p.content,
+                lastMessageAt: p.timestamp,
+                messages: [...old.messages, message],
+              }
+            : old,
         );
       },
     );
@@ -160,10 +159,12 @@ export function WebSocketProvider({ tenantId, children }: WebSocketProviderProps
         log('order.updated', { id: p.orderId, status: p.status });
 
         // Patch in list cache
-        qc.setQueryData<Order[]>(orderKeys.list(), (old) =>
-          old?.map((o) =>
-            o.id === p.orderId ? { ...o, status: p.status, updatedAt: p.updatedAt } : o,
-          ) ?? [],
+        qc.setQueryData<Order[]>(
+          orderKeys.list(),
+          (old) =>
+            old?.map((o) =>
+              o.id === p.orderId ? { ...o, status: p.status, updatedAt: p.updatedAt } : o,
+            ) ?? [],
         );
 
         // Patch detail cache if present
@@ -191,10 +192,12 @@ export function WebSocketProvider({ tenantId, children }: WebSocketProviderProps
         log('payment.confirmed', { id: p.paymentId, orderId: p.orderId });
 
         // Patch payment to 'paid' in list cache
-        qc.setQueryData<Payment[]>(paymentKeys.list(), (old) =>
-          old?.map((pay) =>
-            pay.id === p.paymentId ? { ...pay, status: 'paid' as const, paidAt: p.paidAt } : pay,
-          ) ?? [],
+        qc.setQueryData<Payment[]>(
+          paymentKeys.list(),
+          (old) =>
+            old?.map((pay) =>
+              pay.id === p.paymentId ? { ...pay, status: 'paid' as const, paidAt: p.paidAt } : pay,
+            ) ?? [],
         );
 
         // Patch payment detail cache if present
@@ -203,10 +206,12 @@ export function WebSocketProvider({ tenantId, children }: WebSocketProviderProps
         );
 
         // Also patch the related order status in list cache
-        qc.setQueryData<Order[]>(orderKeys.list(), (old) =>
-          old?.map((o) =>
-            o.id === p.orderId ? { ...o, status: 'paid' as const, updatedAt: p.paidAt } : o,
-          ) ?? [],
+        qc.setQueryData<Order[]>(
+          orderKeys.list(),
+          (old) =>
+            old?.map((o) =>
+              o.id === p.orderId ? { ...o, status: 'paid' as const, updatedAt: p.paidAt } : o,
+            ) ?? [],
         );
 
         // Revenue changed — mark dashboard metrics stale
@@ -221,8 +226,7 @@ export function WebSocketProvider({ tenantId, children }: WebSocketProviderProps
         const p = msg.payload;
         log('conversation.started', { id: p.id, identifier: p.customer_identifier });
 
-        const domainStatus: Conversation['status'] =
-          p.status === 'closed' ? 'resolved' : p.status;
+        const domainStatus: Conversation['status'] = p.status === 'closed' ? 'resolved' : p.status;
 
         const newConv: Conversation = {
           id: p.id,

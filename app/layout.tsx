@@ -9,8 +9,7 @@ export const metadata: Metadata = {
   description: 'Real-time conversational commerce dashboard',
 };
 
-// Tenant is read server-side from env and passed to the client provider.
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? 'default';
+// Tenant identity is resolved after login via the auth store — no env var needed here.
 
 /**
  * Anti-flash script — runs synchronously before React hydration so the correct
@@ -34,10 +33,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {/* eslint-disable-next-line react/no-danger */}
         <script dangerouslySetInnerHTML={{ __html: antiFlashScript }} />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>
-            <WebSocketProvider tenantId={TENANT_ID}>{children}</WebSocketProvider>
+            <WebSocketProvider>{children}</WebSocketProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

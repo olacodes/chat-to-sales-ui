@@ -27,6 +27,8 @@ interface ChatWindowProps {
   onViewOrderDetails?: (orderId: string) => void;
   /** Marks the conversation as resolved */
   onMarkResolved?: (conversationId: string) => void;
+  /** Mobile only — called when user taps the back arrow to return to the list */
+  onBack?: () => void;
 }
 
 const statusBadge: Record<Conversation['status'], React.ReactElement> = {
@@ -114,6 +116,7 @@ export function ChatWindow({
   linkedOrder,
   onViewOrderDetails,
   onMarkResolved,
+  onBack,
 }: Readonly<ChatWindowProps>) {
   const { id, customerName, customerIdentifier, status } = conversation;
   const messages = messagesProp ?? conversation.messages;
@@ -176,6 +179,28 @@ export function ChatWindow({
         }}
       >
         <div className="flex items-center gap-3 min-w-0">
+          {/* Back button — mobile only */}
+          {onBack && (
+            <button
+              type="button"
+              aria-label="Back to conversations"
+              onClick={onBack}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg md:hidden"
+              style={{ color: 'var(--ds-text-secondary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
           {/* Avatar */}
           <div
             className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"

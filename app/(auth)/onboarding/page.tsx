@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { apiClient, ApiError } from '@/lib/api/client';
-import { TENANT_ID } from '@/lib/api/config';
+import { getTenantId } from '@/lib/auth/tokenStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ async function runEmbeddedSignup(): Promise<WhatsAppCredentials> {
 
 async function bindWhatsAppToTenant(creds: WhatsAppCredentials) {
   return apiClient.post('/api/v1/channels/whatsapp/connect', {
-    tenant_id: TENANT_ID,
+    tenant_id: getTenantId() ?? '',
     phone_number_id: creds.phone_number_id,
     access_token: creds.access_token,
   });

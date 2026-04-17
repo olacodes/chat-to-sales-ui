@@ -118,7 +118,7 @@ export function ConversationList({
 
   return (
     <aside
-      className="flex h-full w-80 shrink-0 flex-col"
+      className="flex h-full w-full shrink-0 flex-col md:w-80"
       style={{
         borderRight: '1px solid var(--ds-border-base)',
         backgroundColor: 'var(--ds-bg-surface)',

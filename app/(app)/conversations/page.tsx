@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAppStore } from '@/store';
+import { useAuthStore } from '@/store/useAuthStore';
 import { ConversationList } from '@/components/conversations/ConversationList';
 import { ChatWindow } from '@/components/conversations/ChatWindow';
 import { RealtimeToast } from '@/components/conversations/RealtimeToast';
@@ -20,7 +21,7 @@ function InboundMessageForm() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? 'tenant-abc-123';
+  const tenantId = useAuthStore((s) => s.tenantId) ?? '';
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -213,35 +214,54 @@ export default function ConversationsPage() {
     updateConversation(conversationId, { status: 'resolved' });
   }
 
+  function handleSelectConversation(id: string) {
+    setActiveConversation(id);
+  }
+
+  function handleBack() {
+    setActiveConversation(null);
+  }
+
+  // On mobile: show chat panel when a conversation is active, list otherwise.
+  // On md+: both panels are always visible side-by-side.
+  const showChat = activeConversation !== null;
+
   return (
     <div className="relative flex h-full overflow-hidden -m-6">
-      <ConversationList
-        conversations={conversations}
-        activeId={activeConversationId}
-        onSelect={setActiveConversation}
-        isLoading={isLoadingConvs}
-        hasNextPage={hasMoreConvs}
-        isFetchingNextPage={isFetchingMoreConvs}
-        onLoadMore={() => fetchMoreConvs()}
-      />
-
-      {activeConversation ? (
-        <ChatWindow
-          conversation={activeConversation}
-          messages={messages}
-          isLoadingMessages={isLoadingMessages}
-          hasMoreMessages={hasMoreMessages}
-          isFetchingMoreMessages={isFetchingMoreMessages}
-          onLoadMoreMessages={() => fetchMoreMessages()}
-          onSendMessage={handleSendMessage}
-          isSending={isSending}
-          wsStatus={status}
-          linkedOrder={linkedOrder}
-          onMarkResolved={handleMarkResolved}
+      {/* Conversation list — hidden on mobile when chat is open */}
+      <div className={`${showChat ? 'hidden md:flex' : 'flex'} h-full w-full md:w-auto`}>
+        <ConversationList
+          conversations={conversations}
+          activeId={activeConversationId}
+          onSelect={handleSelectConversation}
+          isLoading={isLoadingConvs}
+          hasNextPage={hasMoreConvs}
+          isFetchingNextPage={isFetchingMoreConvs}
+          onLoadMore={() => fetchMoreConvs()}
         />
-      ) : (
-        <InboundMessageForm />
-      )}
+      </div>
+
+      {/* Chat panel — full-screen on mobile when active, flex-1 on md+ */}
+      <div className={`${showChat ? 'flex' : 'hidden md:flex'} h-full flex-1 min-w-0`}>
+        {activeConversation ? (
+          <ChatWindow
+            conversation={activeConversation}
+            messages={messages}
+            isLoadingMessages={isLoadingMessages}
+            hasMoreMessages={hasMoreMessages}
+            isFetchingMoreMessages={isFetchingMoreMessages}
+            onLoadMoreMessages={() => fetchMoreMessages()}
+            onSendMessage={handleSendMessage}
+            isSending={isSending}
+            wsStatus={status}
+            linkedOrder={linkedOrder}
+            onMarkResolved={handleMarkResolved}
+            onBack={handleBack}
+          />
+        ) : (
+          <InboundMessageForm />
+        )}
+      </div>
 
       <RealtimeToast activity={lastActivity} onDismiss={clearActivity} />
 

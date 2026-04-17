@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
+import { logout } from '@/lib/auth/service';
 import type { Route } from 'next';
 
 interface SidebarProps {
@@ -139,6 +141,21 @@ const navItems: NavItem[] = [
 
 export function Sidebar({ isOpen, onClose }: Readonly<SidebarProps>) {
   const pathname = usePathname();
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+
+  const email = user?.email ?? '';
+  const displayName = email
+    .split('@')[0]
+    .replaceAll('.', ' ')
+    .replaceAll('_', ' ')
+    .replaceAll(/\b\w/g, (c) => c.toUpperCase());
+  const letters = (displayName.slice(0, 2) || email.slice(0, 2)).toUpperCase() || 'U';
+
+  function handleLogout() {
+    logout();
+    router.push('/login');
+  }
 
   return (
     <>
@@ -300,7 +317,7 @@ export function Sidebar({ isOpen, onClose }: Readonly<SidebarProps>) {
             <span>Settings</span>
           </Link>
 
-          {/* User */}
+          {/* User card + logout */}
           <div
             className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 mt-1"
             style={{ backgroundColor: 'var(--ds-bg-sunken)' }}
@@ -312,19 +329,50 @@ export function Sidebar({ isOpen, onClose }: Readonly<SidebarProps>) {
                 color: 'var(--ds-brand-text)',
               }}
             >
-              A
+              {letters}
             </div>
             <div className="min-w-0 flex-1">
               <p
                 className="text-xs font-semibold truncate"
                 style={{ color: 'var(--ds-text-primary)' }}
               >
-                Admin
+                {displayName || 'User'}
               </p>
               <p className="text-[11px] truncate" style={{ color: 'var(--ds-text-tertiary)' }}>
-                admin@chattosales.io
+                {email}
               </p>
             </div>
+            {/* Logout icon button */}
+            <button
+              type="button"
+              aria-label="Sign out"
+              onClick={handleLogout}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-150"
+              style={{ color: 'var(--ds-text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--ds-danger-bg)';
+                e.currentTarget.style.color = 'var(--ds-danger-text)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--ds-text-tertiary)';
+              }}
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </aside>

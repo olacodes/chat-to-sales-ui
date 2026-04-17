@@ -12,7 +12,8 @@
  *   const health = await apiClient.get<HealthResponse>('/health');
  */
 
-import { BASE_URL, TENANT_ID, DEFAULT_TIMEOUT_MS } from './config';
+import { BASE_URL, DEFAULT_TIMEOUT_MS } from './config';
+import { getToken, getTenantId } from '@/lib/auth/tokenStore';
 
 // ─── Error types ───────────────────────────────────────────────────────────────
 
@@ -53,9 +54,11 @@ function logApi(method: string, path: string, status?: number, durationMs?: numb
  * Called on every outbound request to enforce multi-tenant isolation.
  */
 function withTenantId(url: string): string {
+  const tenantId = getTenantId();
+  if (!tenantId) return url;
   if (url.includes('tenant_id=')) return url;
   const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}tenant_id=${encodeURIComponent(TENANT_ID)}`;
+  return `${url}${sep}tenant_id=${encodeURIComponent(tenantId)}`;
 }
 
 // ─── Internal helpers ──────────────────────────────────────────────────────────
@@ -110,6 +113,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
         ...headers,
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,

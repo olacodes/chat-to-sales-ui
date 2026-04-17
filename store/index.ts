@@ -1,6 +1,7 @@
 /**
  * Store barrel — import everything from here.
  *   import { useAppStore, selectActiveConversation } from '@/store';
+ *   import { useAuthStore } from '@/store';
  */
 export {
   useAppStore,
@@ -10,6 +11,8 @@ export {
   selectPaymentsByOrder,
   selectTotalUnread,
 } from './useAppStore';
+
+export { useAuthStore } from './useAuthStore';
 
 export type {
   Conversation,

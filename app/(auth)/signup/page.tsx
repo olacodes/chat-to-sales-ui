@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { apiClient, ApiError } from '@/lib/api/client';
+import { setTenantId } from '@/lib/auth/tokenStore';
 
 const signupSchema = z.object({
   email: z.email('Enter a valid email address'),
@@ -18,14 +19,39 @@ const signupSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
-async function signupWithEmail(payload: SignupFormValues) {
-  return apiClient.post('/api/v1/auth/signup', payload);
+interface AuthResponse {
+  user_id: string;
+  tenant_id: string;
+}
+
+async function signupWithEmail(payload: SignupFormValues): Promise<AuthResponse> {
+  return apiClient.post<AuthResponse>('/api/v1/auth/signup/email', payload);
+}
+
+async function signupWithGoogle(): Promise<AuthResponse> {
+  return apiClient.post<AuthResponse>('/api/v1/auth/signup/google', {
+    id_token: 'mock_google_token',
+  });
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 409) return 'An account with this email already exists.';
+    if (error.status === 400)
+      return error.body.message || 'Invalid details. Please check your input.';
+    return error.body.message || 'Something went wrong. Please try again.';
+  }
+  if (error instanceof Error) return error.message;
+  return 'Could not create your account. Please try again.';
 }
 
 export default function SignupPage() {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  // Debounce guard — prevents double-submit on rapid clicks
+  const submittingRef = useRef(false);
 
   const {
     register,
@@ -33,32 +59,45 @@ export default function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
+  const isBusy = isSubmitting || isGoogleLoading;
+
   const onSubmit = handleSubmit(async (values) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitError(null);
     setIsSuccess(false);
 
     try {
-      await signupWithEmail(values);
+      const { tenant_id } = await signupWithEmail(values);
+      setTenantId(tenant_id);
       setIsSuccess(true);
       setTimeout(() => router.push('/onboarding'), 700);
     } catch (error) {
-      let message = 'Could not create your account. Please try again.';
-
-      if (error instanceof ApiError) {
-        message = error.body.message;
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-
-      setSubmitError(message);
+      setSubmitError(getErrorMessage(error));
+    } finally {
+      submittingRef.current = false;
     }
   });
+
+  async function handleGoogleSignup() {
+    if (isBusy) return;
+    setSubmitError(null);
+    setIsGoogleLoading(true);
+
+    try {
+      const { tenant_id } = await signupWithGoogle();
+      setTenantId(tenant_id);
+      setIsSuccess(true);
+      setTimeout(() => router.push('/onboarding'), 700);
+    } catch (error) {
+      setSubmitError(getErrorMessage(error));
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
 
   return (
     <Card className="w-full max-w-md">
@@ -96,7 +135,7 @@ export default function SignupPage() {
             label="Email"
             placeholder="you@company.com"
             autoComplete="email"
-            disabled={isSubmitting}
+            disabled={isBusy}
             error={errors.email?.message}
             {...register('email')}
           />
@@ -106,28 +145,41 @@ export default function SignupPage() {
             label="Password"
             placeholder="At least 6 characters"
             autoComplete="new-password"
-            disabled={isSubmitting}
+            disabled={isBusy}
             error={errors.password?.message}
             {...register('password')}
           />
 
           {submitError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p
+              className="rounded-lg px-3 py-2 text-sm"
+              style={{ backgroundColor: 'var(--ds-danger-bg)', color: 'var(--ds-danger-text)' }}
+            >
               {submitError}
             </p>
           )}
 
           {isSuccess && (
-            <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-              Account created. Redirecting to onboarding...
+            <p
+              className="rounded-lg px-3 py-2 text-sm"
+              style={{ backgroundColor: 'var(--ds-success-bg)', color: 'var(--ds-success-text)' }}
+            >
+              Account created. Redirecting to onboarding…
             </p>
           )}
 
-          <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting}>
+          <Button type="submit" className="w-full" loading={isSubmitting} disabled={isBusy}>
             Create Account
           </Button>
 
-          <Button type="button" variant="outline" className="w-full" disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={isBusy}
+            loading={isGoogleLoading}
+            onClick={handleGoogleSignup}
+          >
             Continue with Google
           </Button>
         </form>
