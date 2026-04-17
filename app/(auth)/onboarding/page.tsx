@@ -225,13 +225,13 @@ export default function OnboardingPage() {
                   sdkStatus === 'loading'
                     ? 'Loading Meta SDK…'
                     : sdkStatus === 'pending'
-                      ? 'Meta window is open…'
+                      ? 'Meta window is open — complete the steps there…'
                       : sdkStatus === 'error'
                         ? 'Could not load Meta SDK. Check your connection.'
                         : 'Connect in 30 seconds via Meta'
                 }
-                loading={sdkStatus === 'loading'}
-                disabled={sdkStatus === 'pending' || sdkStatus === 'error'}
+                loading={sdkStatus === 'loading' || sdkStatus === 'pending'}
+                disabled={sdkStatus === 'error'}
                 onClick={sdkStatus === 'ready' || sdkStatus === 'cancelled' ? launch : undefined}
               />
               <ChannelCard

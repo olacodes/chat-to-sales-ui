@@ -219,32 +219,67 @@ export function useMetaEmbeddedSignup() {
 
   // ── Launch ────────────────────────────────────────────────────────────────
 
+  const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const launch = useCallback(() => {
     if (typeof window === 'undefined' || !window.FB) return;
+
+    // Guard: refuse to launch if required config is missing
+    if (!META_APP_ID || !META_CONFIG_ID) {
+      console.error(
+        '[useMetaEmbeddedSignup] NEXT_PUBLIC_META_APP_ID or NEXT_PUBLIC_META_CONFIG_ID is not set.',
+      );
+      setSdkStatus('error');
+      return;
+    }
 
     // Reset any leftover partial state from a previous attempt
     pendingCodeRef.current = null;
     pendingAssetRef.current = null;
     setSdkStatus('pending');
 
-    window.FB.login(
-      (response) => {
-        if (response.authResponse) {
-          pendingCodeRef.current = response.authResponse.code;
-          tryMerge();
-        } else {
-          // User closed the popup — cancellation is also captured by the
-          // message listener (CANCEL event), but handle here as a fallback.
-          setSdkStatus('cancelled');
-        }
+    // Safety net: if neither callback fires within 5 minutes
+    // (popup blocked, SDK bug, etc.) auto-reset so the user can retry.
+    if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current);
+    pendingTimeoutRef.current = setTimeout(
+      () => {
+        setSdkStatus((prev) => (prev === 'pending' ? 'cancelled' : prev));
       },
-      {
-        config_id: META_CONFIG_ID,
-        response_type: 'code',
-        override_default_response_type: true,
-        extras: { setup: {} },
-      },
+      5 * 60 * 1_000,
     );
+
+    try {
+      window.FB.login(
+        (response) => {
+          if (pendingTimeoutRef.current) {
+            clearTimeout(pendingTimeoutRef.current);
+            pendingTimeoutRef.current = null;
+          }
+          if (response.authResponse) {
+            pendingCodeRef.current = response.authResponse.code;
+            tryMerge();
+          } else {
+            // User closed the popup without completing, or popup was blocked.
+            // The WA_EMBEDDED_SIGNUP CANCEL message event is the primary signal;
+            // this handles the cases where that event doesn't fire.
+            setSdkStatus('cancelled');
+          }
+        },
+        {
+          config_id: META_CONFIG_ID,
+          response_type: 'code',
+          override_default_response_type: true,
+          extras: { setup: {} },
+        },
+      );
+    } catch (err) {
+      console.error('[useMetaEmbeddedSignup] FB.login() threw:', err);
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+      setSdkStatus('cancelled');
+    }
   }, [tryMerge]);
 
   return { sdkStatus, launch, session, clearSession };
