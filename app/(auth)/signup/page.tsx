@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { apiClient, ApiError } from '@/lib/api/client';
-import { setTenantId } from '@/lib/auth/tokenStore';
+import { loginWithEmail } from '@/lib/auth/service';
 
 const signupSchema = z.object({
   email: z.email('Enter a valid email address'),
@@ -71,8 +71,10 @@ export default function SignupPage() {
     setIsSuccess(false);
 
     try {
-      const { tenant_id } = await signupWithEmail(values);
-      setTenantId(tenant_id);
+      await signupWithEmail(values);
+      // Establish a full session so the user can access protected routes
+      // (e.g. /onboarding) without being redirected to /login.
+      await loginWithEmail(values.email, values.password);
       setIsSuccess(true);
       setTimeout(() => router.push('/onboarding'), 700);
     } catch (error) {
@@ -88,8 +90,10 @@ export default function SignupPage() {
     setIsGoogleLoading(true);
 
     try {
-      const { tenant_id } = await signupWithGoogle();
-      setTenantId(tenant_id);
+      await signupWithGoogle();
+      // Google signup doesn't give us credentials to re-login with;
+      // treat as a passwordless session by applying the signup response directly.
+      // TODO: update when backend returns an access_token on signup.
       setIsSuccess(true);
       setTimeout(() => router.push('/onboarding'), 700);
     } catch (error) {

@@ -22,6 +22,7 @@ const PROTECTED_PREFIX = [
   '/customers',
   '/settings',
   '/test',
+  '/onboarding',
 ];
 
 /** Auth routes — authenticated users should not see these */

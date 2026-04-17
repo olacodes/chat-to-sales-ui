@@ -294,7 +294,7 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            <Button className="mt-6 w-full" size="lg" onClick={() => router.push('/conversations')}>
+            <Button className="mt-6 w-full" size="lg" onClick={() => router.push('/dashboard')}>
               Go to Dashboard
             </Button>
           </div>
