@@ -25,12 +25,23 @@ type SimEvent = {
 
 const SIM_EVENTS: SimEvent[] = [
   {
+    label: '🆕 New conversation',
+    type: 'conversation.started',
+    buildPayload: () => ({
+      id: `sim-conv-${Date.now()}`,
+      customer_identifier: `+234801${Math.floor(Math.random() * 9_000_000 + 1_000_000)}`,
+      customer_name: null,
+      status: 'open',
+      created_at: new Date().toISOString(),
+    }),
+  },
+  {
     label: '💬 Incoming message',
     type: 'message.received',
     buildPayload: (activeId) => ({
       id: `sim-msg-${Date.now()}`,
       conversationId: activeId ?? 'conv-001',
-      role: 'user',
+      sender_role: 'user',
       content: `[SIM] Hey, I have a quick question about my order — ${new Date().toLocaleTimeString()}`,
       timestamp: new Date().toISOString(),
     }),

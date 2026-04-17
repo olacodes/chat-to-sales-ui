@@ -113,7 +113,11 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           },
         );
 
-        // Update lastMessage + unreadCount across all paginated conversation lists
+        // Update lastMessage + unreadCount across all paginated conversation lists.
+        // If the conversation isn't found (e.g. first message of a brand-new
+        // conversation whose 'conversation.started' event raced / was missed),
+        // fall back to a full invalidation so the list is refetched.
+        let foundInList = false;
         qc.setQueriesData<InfiniteData<PagedOut<Conversation>>>(
           { queryKey: conversationKeys.lists() },
           (old) => {
@@ -122,20 +126,25 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
               ...old,
               pages: old.pages.map((page) => ({
                 ...page,
-                items: page.items.map((c) =>
-                  c.id === p.conversationId
-                    ? {
-                        ...c,
-                        lastMessage: p.content,
-                        lastMessageAt: p.timestamp,
-                        unreadCount: c.unreadCount + 1,
-                      }
-                    : c,
-                ),
+                items: page.items.map((c) => {
+                  if (c.id !== p.conversationId) return c;
+                  foundInList = true;
+                  return {
+                    ...c,
+                    lastMessage: p.content,
+                    lastMessageAt: p.timestamp,
+                    unreadCount: c.unreadCount + 1,
+                  };
+                }),
               })),
             };
           },
         );
+
+        if (!foundInList) {
+          log('message.received — conversation not in cache, invalidating list');
+          qc.invalidateQueries({ queryKey: conversationKeys.lists() });
+        }
 
         // Patch conversation detail if it's already in cache
         qc.setQueryData<Conversation>(conversationKeys.detail(p.conversationId), (old) =>
@@ -239,16 +248,26 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           messages: [],
         };
 
-        // Prepend to the first page of every conversation list in cache
+        // Try surgical prepend into every cached conversation list.
+        // Track whether any cached list was actually updated.
+        let updatedCache = false;
         qc.setQueriesData<InfiniteData<PagedOut<Conversation>>>(
           { queryKey: conversationKeys.lists() },
           (old) => {
             if (!old) return old;
+            updatedCache = true;
             const pages = [...old.pages];
             pages[0] = { ...pages[0], items: [newConv, ...pages[0].items] };
             return { ...old, pages };
           },
         );
+
+        // If the cache was cold (user hasn't loaded the list yet), fall back to
+        // a full invalidation so the next render fetches fresh data.
+        if (!updatedCache) {
+          log('conversation.started — cache cold, invalidating');
+          qc.invalidateQueries({ queryKey: conversationKeys.lists() });
+        }
       },
     );
 

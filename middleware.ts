@@ -27,16 +27,12 @@ const PROTECTED_PREFIX = [
 /** Auth routes — authenticated users should not see these */
 const AUTH_ROUTES = ['/login', '/signup'];
 
-/** The root path — unauthenticated → /login, authenticated → /dashboard */
-const ROOT_PATH = '/';
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthenticated = request.cookies.has(SESSION_COOKIE);
 
   const isProtected = PROTECTED_PREFIX.some((p) => pathname === p || pathname.startsWith(p + '/'));
   const isAuthRoute = AUTH_ROUTES.some((p) => pathname === p || pathname.startsWith(p + '/'));
-  const isRoot = pathname === ROOT_PATH;
 
   // Unauthenticated user hitting a protected route → redirect to login
   if (isProtected && !isAuthenticated) {
@@ -46,16 +42,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Unauthenticated user hitting root → redirect to login
-  if (isRoot && !isAuthenticated) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    loginUrl.searchParams.delete('next');
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Authenticated user hitting login/signup or root → redirect to dashboard
-  if ((isAuthRoute || isRoot) && isAuthenticated) {
+  // Authenticated user hitting login/signup → redirect to dashboard
+  if (isAuthRoute && isAuthenticated) {
     const dashUrl = request.nextUrl.clone();
     dashUrl.pathname = '/dashboard';
     dashUrl.searchParams.delete('next');

@@ -1,7 +1,11 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { Button } from '@/components/ui/Button';
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const cookieStore = await cookies();
+  const isAuthenticated = cookieStore.has('cts-session');
+
   return (
     <div className="flex w-full max-w-md flex-col items-center text-center">
       {/* Logo mark */}
@@ -28,16 +32,26 @@ export default function LandingPage() {
       </p>
 
       <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row">
-        <Link href="/signup" className="flex-1">
-          <Button className="w-full" size="lg">
-            Get started free
-          </Button>
-        </Link>
-        <Link href="/login" className="flex-1">
-          <Button variant="outline" className="w-full" size="lg">
-            Sign in
-          </Button>
-        </Link>
+        {isAuthenticated ? (
+          <Link href="/dashboard" className="flex-1">
+            <Button className="w-full" size="lg">
+              Go to dashboard
+            </Button>
+          </Link>
+        ) : (
+          <>
+            <Link href="/signup" className="flex-1">
+              <Button className="w-full" size="lg">
+                Get started free
+              </Button>
+            </Link>
+            <Link href="/login" className="flex-1">
+              <Button variant="outline" className="w-full" size="lg">
+                Sign in
+              </Button>
+            </Link>
+          </>
+        )}
       </div>
 
       <p className="mt-6 text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
