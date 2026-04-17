@@ -1,38 +1,34 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { apiClient, ApiError } from '@/lib/api/client';
 import { getTenantId } from '@/lib/auth/tokenStore';
+import { useMetaEmbeddedSignup } from '@/lib/hooks/useMetaEmbeddedSignup';
+import type { EmbeddedSignupSession } from '@/lib/hooks/useMetaEmbeddedSignup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Step = 'select' | 'connecting' | 'success';
 
-interface WhatsAppCredentials {
-  phone_number_id: string;
-  access_token: string;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Backend API call ─────────────────────────────────────────────────────────
 
 /**
- * Simulates the Meta WhatsApp embedded signup flow.
- * Replace with the real Meta JS SDK call when ready:
- *   window.FB.login(callback, { scope: 'whatsapp_business_management' })
+ * Sends the embedded signup result to the backend.
+ * The backend must:
+ *   1. Exchange `code` for a business token (server-to-server call to Meta)
+ *   2. Register webhooks on the WABA
+ *   3. Store the channel credentials for this tenant
  */
-async function runEmbeddedSignup(): Promise<WhatsAppCredentials> {
-  await new Promise((r) => setTimeout(r, 1800));
-  return { phone_number_id: '123456789', access_token: 'mock_access_token_abc123' };
-}
-
-async function bindWhatsAppToTenant(creds: WhatsAppCredentials) {
+async function bindWhatsAppToTenant(session: EmbeddedSignupSession) {
   return apiClient.post('/api/v1/channels/whatsapp/connect', {
     tenant_id: getTenantId() ?? '',
-    phone_number_id: creds.phone_number_id,
-    access_token: creds.access_token,
+    code: session.code,
+    phone_number_id: session.phone_number_id,
+    waba_id: session.waba_id,
   });
 }
 
@@ -43,6 +39,8 @@ interface ChannelCardProps {
   name: string;
   description: string;
   disabled?: boolean;
+  /** Shows a spinner in place of the chevron — card still renders but is not interactive */
+  loading?: boolean;
   onClick?: () => void;
 }
 
@@ -51,20 +49,22 @@ function ChannelCard({
   name,
   description,
   disabled = false,
+  loading = false,
   onClick,
 }: Readonly<ChannelCardProps>) {
+  const isInert = disabled || loading;
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
+      disabled={isInert}
       className={[
         'group flex w-full items-center gap-4 rounded-xl border px-4 py-4 text-left transition-all',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-        disabled ? 'cursor-not-allowed opacity-60' : 'hover:shadow-sm active:scale-[0.99]',
+        isInert ? 'cursor-not-allowed opacity-60' : 'hover:shadow-sm active:scale-[0.99]',
       ].join(' ')}
       style={
-        disabled
+        isInert
           ? {
               borderColor: 'var(--ds-border-subtle)',
               backgroundColor: 'var(--ds-bg-sunken)',
@@ -79,7 +79,7 @@ function ChannelCard({
       <div className="min-w-0 flex-1">
         <p
           className="text-sm font-semibold"
-          style={{ color: disabled ? 'var(--ds-text-disabled)' : 'var(--ds-text-primary)' }}
+          style={{ color: isInert ? 'var(--ds-text-disabled)' : 'var(--ds-text-primary)' }}
         >
           {name}
         </p>
@@ -87,7 +87,30 @@ function ChannelCard({
           {description}
         </p>
       </div>
-      {disabled ? (
+      {loading ? (
+        /* Spinner while SDK loads */
+        <svg
+          className="h-4 w-4 shrink-0 animate-spin"
+          style={{ color: 'var(--ds-text-tertiary)' }}
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+      ) : disabled ? (
         <span
           className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
           style={{ backgroundColor: 'var(--ds-bg-active)', color: 'var(--ds-text-tertiary)' }}
@@ -145,23 +168,30 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<Step>('select');
   const [error, setError] = useState<string | null>(null);
 
-  async function handleWhatsAppConnect() {
+  const { sdkStatus, launch, session, clearSession } = useMetaEmbeddedSignup();
+
+  // When the Meta popup completes, `session` becomes non-null.
+  // Immediately send to the backend (the code has a 30-second TTL).
+  useEffect(() => {
+    if (!session) return;
+
     setStep('connecting');
     setError(null);
 
-    try {
-      const creds = await runEmbeddedSignup();
-      await bindWhatsAppToTenant(creds);
-      setStep('success');
-    } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.body.message
-          : 'Failed to connect WhatsApp. Please try again.';
-      setError(message);
-      setStep('select');
-    }
-  }
+    bindWhatsAppToTenant(session)
+      .then(() => {
+        setStep('success');
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof ApiError
+            ? ((err.body.message as string) ?? 'Failed to connect WhatsApp. Please try again.')
+            : 'Failed to connect WhatsApp. Please try again.';
+        setError(message);
+        setStep('select');
+      })
+      .finally(() => clearSession());
+  }, [session, clearSession]);
 
   return (
     <Card className="w-full max-w-md">
@@ -191,8 +221,18 @@ export default function OnboardingPage() {
               <ChannelCard
                 icon={WhatsAppIcon}
                 name="WhatsApp Business"
-                description="Connect in 30 seconds via Meta"
-                onClick={handleWhatsAppConnect}
+                description={
+                  sdkStatus === 'loading'
+                    ? 'Loading Meta SDK…'
+                    : sdkStatus === 'pending'
+                      ? 'Meta window is open…'
+                      : sdkStatus === 'error'
+                        ? 'Could not load Meta SDK. Check your connection.'
+                        : 'Connect in 30 seconds via Meta'
+                }
+                loading={sdkStatus === 'loading'}
+                disabled={sdkStatus === 'pending' || sdkStatus === 'error'}
+                onClick={sdkStatus === 'ready' || sdkStatus === 'cancelled' ? launch : undefined}
               />
               <ChannelCard
                 icon={InstagramIcon}
@@ -202,8 +242,31 @@ export default function OnboardingPage() {
               />
             </div>
 
+            {/* Cancelled notice */}
+            {sdkStatus === 'cancelled' && (
+              <p
+                className="mt-4 rounded-lg px-3 py-2 text-xs"
+                style={{
+                  color: 'var(--ds-warning-text)',
+                  backgroundColor: 'var(--ds-warning-bg)',
+                  border: '1px solid var(--ds-warning-border)',
+                }}
+              >
+                You closed the Meta window without completing setup. Click WhatsApp Business above
+                to try again.
+              </p>
+            )}
+
+            {/* Backend error */}
             {error && (
-              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p
+                className="mt-4 rounded-lg px-3 py-2 text-xs"
+                style={{
+                  color: 'var(--ds-danger-text)',
+                  backgroundColor: 'var(--ds-danger-bg)',
+                  border: '1px solid var(--ds-danger-border)',
+                }}
+              >
                 {error}
               </p>
             )}
@@ -244,10 +307,10 @@ export default function OnboardingPage() {
               </svg>
             </div>
             <h2 className="text-lg font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
-              Connecting to WhatsApp…
+              Finishing setup…
             </h2>
             <p className="mt-2 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
-              Completing verification with Meta. This takes a few seconds.
+              Registering your WhatsApp Business number. This takes a few seconds.
             </p>
           </div>
         )}
