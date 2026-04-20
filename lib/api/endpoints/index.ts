@@ -12,3 +12,4 @@ export * from './conversations';
 export * from './orders';
 export * from './payments';
 export * from './dashboard';
+export * from './notifications';

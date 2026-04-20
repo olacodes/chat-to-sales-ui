@@ -22,6 +22,8 @@ import {
   type QueryKey,
 } from '@tanstack/react-query';
 import { conversationsApi } from '@/lib/api/endpoints/conversations';
+import { notificationsApi } from '@/lib/api/endpoints/notifications';
+import { getTenantId } from '@/lib/auth/tokenStore';
 import type { PagedOut } from '@/lib/api/types';
 import type { Conversation, Message } from '@/store';
 import type { AddMessagePayload } from '@/lib/api/types';
@@ -68,8 +70,7 @@ export function useConversations() {
     string | null | undefined
   >({
     queryKey: conversationKeys.list(),
-    queryFn: ({ pageParam, signal }) =>
-      conversationsApi.listPaged(pageParam ?? null, signal),
+    queryFn: ({ pageParam, signal }) => conversationsApi.listPaged(pageParam ?? null, signal),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     staleTime: 30_000,
@@ -128,6 +129,10 @@ export function useMessages(conversationId: string | null | undefined) {
 interface SendMessageVariables {
   conversationId: string;
   payload: AddMessagePayload;
+  /** Customer phone / identifier — used to forward the message via WhatsApp. */
+  recipient: string;
+  /** WhatsApp template name configured in Meta Business Manager. */
+  templateName?: string;
 }
 
 /**
@@ -178,9 +183,7 @@ export function useSendMessage() {
           };
         }
         const pages = old.pages.map((page, idx) =>
-          idx === old.pages.length - 1
-            ? { ...page, items: [...page.items, optimistic] }
-            : page,
+          idx === old.pages.length - 1 ? { ...page, items: [...page.items, optimistic] } : page,
         );
         return { ...old, pages };
       });
@@ -196,6 +199,24 @@ export function useSendMessage() {
         queryClient.setQueryData(messagesKey, ctx.previousMessages);
       }
       console.error('[useSendMessage] failed:', error.message);
+    },
+
+    // ── Forward to WhatsApp after message is persisted ─────────────────────
+    onSuccess: (_data, { recipient, payload, templateName }) => {
+      if (payload.sender_role !== 'assistant') return;
+      const tenantId = getTenantId();
+      if (!tenantId || !recipient) return;
+      notificationsApi
+        .send({
+          tenant_id: tenantId,
+          recipient,
+          channel: 'whatsapp',
+          template_name: templateName ?? 'text_message',
+          variables: { body: payload.content },
+        })
+        .catch((err: unknown) => {
+          console.error('[useSendMessage] notification send failed:', err);
+        });
     },
 
     // ── Invalidate on settle so real id replaces optimistic id ─────────────

@@ -207,7 +207,12 @@ export default function ConversationsPage() {
   const linkedOrder = orders.find((o) => o.conversationId === activeConversationId) ?? null;
 
   function handleSendMessage(conversationId: string, content: string) {
-    sendMessage({ conversationId, payload: { sender_role: 'assistant', content } });
+    const conversation = conversations.find((c) => c.id === conversationId);
+    sendMessage({
+      conversationId,
+      payload: { sender_role: 'assistant', content },
+      recipient: conversation?.customerIdentifier ?? '',
+    });
   }
 
   function handleMarkResolved(conversationId: string) {
