@@ -23,8 +23,8 @@ function ChatIcon() {
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: 'Product', href: '/product' },
+  { label: 'Features', href: '/features' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'Customers', href: '#' },
   { label: 'Blog', href: '#' },
 ];
 
