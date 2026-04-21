@@ -25,7 +25,8 @@ const CORE_FEATURES: Feature[] = [
     icon: '◈',
     title: 'Smart Contact Profiles',
     desc: 'Every WhatsApp contact becomes a rich customer profile: name, phone, business type, location, total spend, order history, notes, and labels. Auto-populated from chat history using AI — no manual entry.',
-    insight: 'Competitors show you a list of phone numbers. You see a customer with a full history.',
+    insight:
+      'Competitors show you a list of phone numbers. You see a customer with a full history.',
     accentColor: 'var(--ds-brand-bg)',
     accentSoft: 'var(--ds-brand-bg-soft)',
     accentBorder: 'var(--ds-brand-border)',
@@ -34,7 +35,8 @@ const CORE_FEATURES: Feature[] = [
     icon: '◉',
     title: 'Visual Sales Pipeline',
     desc: 'Drag-and-drop kanban board: New Lead → Contacted → Quoted → Negotiating → Closed Won / Lost. Each card shows the customer name, deal value, last contact date, and a heat indicator (hot / warm / cold).',
-    insight: 'No competitor built for the Nigerian market has a proper pipeline view. This alone justifies the subscription.',
+    insight:
+      'No competitor built for the Nigerian market has a proper pipeline view. This alone justifies the subscription.',
     accentColor: '#f59e0b',
     accentSoft: 'rgba(245,158,11,0.10)',
     accentBorder: 'rgba(245,158,11,0.25)',
@@ -52,7 +54,8 @@ const CORE_FEATURES: Feature[] = [
     icon: '◐',
     title: 'Team Shared Inbox',
     desc: 'Multiple staff can reply to customers from one WhatsApp number simultaneously. Conversations are assigned to team members. No more passing a phone around the office. No more lost chats when staff leave.',
-    insight: 'Every growing Nigerian business with more than 1 sales rep hits this wall. Solving it earns the Growth plan upgrade.',
+    insight:
+      'Every growing Nigerian business with more than 1 sales rep hits this wall. Solving it earns the Growth plan upgrade.',
     accentColor: '#ec4899',
     accentSoft: 'rgba(236,72,153,0.10)',
     accentBorder: 'rgba(236,72,153,0.25)',
@@ -61,7 +64,8 @@ const CORE_FEATURES: Feature[] = [
     icon: '◫',
     title: 'Paystack Payment Links',
     desc: 'Generate a Paystack link inside the CRM and send it to any customer in one tap. When the customer pays, the deal automatically moves to "Closed Won" and revenue is logged. No manual reconciliation.',
-    insight: 'No foreign CRM integrates with Paystack natively. This feature alone is worth the subscription price.',
+    insight:
+      'No foreign CRM integrates with Paystack natively. This feature alone is worth the subscription price.',
     accentColor: '#10b981',
     accentSoft: 'rgba(16,185,129,0.10)',
     accentBorder: 'rgba(16,185,129,0.25)',
@@ -69,8 +73,9 @@ const CORE_FEATURES: Feature[] = [
   {
     icon: '◑',
     title: 'Weekly Business Report',
-    desc: "Every Monday morning, the owner receives a WhatsApp message: new leads, deals closed, total revenue, top customers, deals needing attention. No login required — it arrives directly in WhatsApp.",
-    insight: 'Most SME owners never open a dashboard. Delivering insight in WhatsApp means they actually see it.',
+    desc: 'Every Monday morning, the owner receives a WhatsApp message: new leads, deals closed, total revenue, top customers, deals needing attention. No login required — it arrives directly in WhatsApp.',
+    insight:
+      'Most SME owners never open a dashboard. Delivering insight in WhatsApp means they actually see it.',
     accentColor: '#0ea5e9',
     accentSoft: 'rgba(14,165,233,0.10)',
     accentBorder: 'rgba(14,165,233,0.25)',
@@ -94,7 +99,8 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     title: 'AI Follow-up Writer',
     subtitle: 'Speaks Nigerian English',
     desc: 'Based on the last conversation, the AI suggests the perfect follow-up message — written in natural Nigerian English ("Oga, just checking in on that order..."). Tap Send. Done. No typing, no thinking.',
-    insight: 'Foreign AI tools write robotic English. Ours writes how Nigerians actually talk. That cultural fit is a moat no overseas competitor can copy quickly.',
+    insight:
+      'Foreign AI tools write robotic English. Ours writes how Nigerians actually talk. That cultural fit is a moat no overseas competitor can copy quickly.',
     accentColor: '#8b5cf6',
     accentSoft: 'rgba(139,92,246,0.10)',
     accentBorder: 'rgba(139,92,246,0.25)',
@@ -107,7 +113,8 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     title: 'Broadcast with Personalisation',
     subtitle: 'Not spam — smart targeting',
     desc: 'Send a message to a segment ("everyone who bought fabric in the last 3 months") with automatic personalisation ("Hi [Name], we just got new Ankara in..."). Each recipient gets a personal message, not a group blast. WhatsApp-compliant.',
-    insight: 'Generic broadcast tools exist. We combine CRM segmentation + personalisation + WhatsApp compliance — a combination nobody in Nigeria has shipped.',
+    insight:
+      'Generic broadcast tools exist. We combine CRM segmentation + personalisation + WhatsApp compliance — a combination nobody in Nigeria has shipped.',
     accentColor: 'var(--ds-brand-bg)',
     accentSoft: 'var(--ds-brand-bg-soft)',
     accentBorder: 'var(--ds-brand-border)',
@@ -118,9 +125,10 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     tagColor: '#8b5cf6',
     tagSoft: 'rgba(139,92,246,0.12)',
     title: 'Voice Note Transcription',
-    subtitle: 'For customers who don\'t type',
-    desc: "Many Nigerian customers send voice notes instead of text. ChatToSales automatically transcribes incoming voice notes, extracts key info (product interest, budget, location), and updates the customer profile — all without the owner doing anything.",
-    insight: "This is the feature that makes Nigerian SME owners say \"this thing is magical.\" No competitor on the continent has built this.",
+    subtitle: "For customers who don't type",
+    desc: 'Many Nigerian customers send voice notes instead of text. ChatToSales automatically transcribes incoming voice notes, extracts key info (product interest, budget, location), and updates the customer profile — all without the owner doing anything.',
+    insight:
+      'This is the feature that makes Nigerian SME owners say "this thing is magical." No competitor on the continent has built this.',
     accentColor: '#f59e0b',
     accentSoft: 'rgba(245,158,11,0.10)',
     accentBorder: 'rgba(245,158,11,0.25)',
@@ -133,7 +141,8 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     title: 'Naira-Native Dashboard',
     subtitle: 'Real revenue in real currency',
     desc: 'All revenue tracking is in Naira. No dollar conversion, no FX confusion. The dashboard shows: total revenue this month in ₦, average deal size in ₦, best-selling products in ₦. Paystack transactions auto-populate with confirmed amounts.',
-    insight: 'Every foreign CRM shows revenue in USD or converts at weird rates. We speak the language of Nigerian business.',
+    insight:
+      'Every foreign CRM shows revenue in USD or converts at weird rates. We speak the language of Nigerian business.',
     accentColor: '#10b981',
     accentSoft: 'rgba(16,185,129,0.10)',
     accentBorder: 'rgba(16,185,129,0.25)',
@@ -146,7 +155,8 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     title: 'Offline Mode',
     subtitle: 'Works without internet',
     desc: 'The app works fully offline. Contact profiles, pipeline, and notes are cached locally. When the internet comes back, everything syncs. Power cuts and network drops neither erase your work nor block your sales rep.',
-    insight: 'Every cloud-only competitor breaks during NEPA outages and poor 3G. We keep working. In Nigeria, reliability IS a feature.',
+    insight:
+      'Every cloud-only competitor breaks during NEPA outages and poor 3G. We keep working. In Nigeria, reliability IS a feature.',
     accentColor: '#ec4899',
     accentSoft: 'rgba(236,72,153,0.10)',
     accentBorder: 'rgba(236,72,153,0.25)',
@@ -159,7 +169,8 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     title: 'Debt & Credit Tracker',
     subtitle: 'Built for how Nigerians do business',
     desc: 'Nigerian SMEs sell on credit constantly. The CRM tracks who owes what, for how long, and auto-sends polite payment reminder messages on a schedule the owner sets. "Oga, just a reminder that ₦45,000 has been outstanding since last Tuesday."',
-    insight: 'No CRM in the world has a credit/debt tracker designed for informal African commerce. This feature is invisible to foreign builders and obvious to us.',
+    insight:
+      'No CRM in the world has a credit/debt tracker designed for informal African commerce. This feature is invisible to foreign builders and obvious to us.',
     accentColor: '#0ea5e9',
     accentSoft: 'rgba(14,165,233,0.10)',
     accentBorder: 'rgba(14,165,233,0.25)',
@@ -172,7 +183,8 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     title: 'Customer Heat Scoring',
     subtitle: 'AI-powered lead prioritisation',
     desc: 'The AI scores every lead as Hot, Warm, or Cold based on recency of conversation, messages sent, payment history, and response speed. The dashboard surfaces "Your top 5 leads to contact today" every morning. No manual sorting required.',
-    insight: 'A market trader with 200 contacts cannot prioritise manually. This saves hours and directly increases revenue.',
+    insight:
+      'A market trader with 200 contacts cannot prioritise manually. This saves hours and directly increases revenue.',
     accentColor: '#f59e0b',
     accentSoft: 'rgba(245,158,11,0.10)',
     accentBorder: 'rgba(245,158,11,0.25)',
@@ -185,7 +197,8 @@ const UNFAIR_FEATURES: UnfairFeature[] = [
     title: 'Smart Product Catalogue',
     subtitle: 'Shareable via WhatsApp',
     desc: 'Upload products once — photo, name, Naira price. When a customer asks "what do you have?", tap one button and a beautiful catalogue is shared as a WhatsApp message. No PDFs, no Instagram screenshots, no manual price lists.',
-    insight: 'Once owners have built their catalogue, they will not rebuild it on another platform. Retention by design.',
+    insight:
+      'Once owners have built their catalogue, they will not rebuild it on another platform. Retention by design.',
     accentColor: 'var(--ds-brand-bg)',
     accentSoft: 'var(--ds-brand-bg-soft)',
     accentBorder: 'var(--ds-brand-border)',
@@ -385,10 +398,7 @@ function CoreSection() {
             >
               Core
             </span>
-            <div
-              className="flex-1 h-px"
-              style={{ backgroundColor: 'var(--ds-border-base)' }}
-            />
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--ds-border-base)' }} />
           </div>
           <h2
             className="text-4xl font-bold tracking-tight mt-4"
@@ -400,8 +410,8 @@ function CoreSection() {
             className="mt-3 text-lg max-w-2xl"
             style={{ color: 'var(--ds-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}
           >
-            Everything a Nigerian merchant needs to run a professional sales operation from
-            WhatsApp — on day one.
+            Everything a Nigerian merchant needs to run a professional sales operation from WhatsApp
+            — on day one.
           </p>
         </motion.div>
 
@@ -439,10 +449,7 @@ function UnfairSection() {
             >
               Unfair Advantages
             </span>
-            <div
-              className="flex-1 h-px"
-              style={{ backgroundColor: 'var(--ds-border-base)' }}
-            />
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--ds-border-base)' }} />
           </div>
           <h2
             className="text-4xl font-bold tracking-tight mt-4"
@@ -556,7 +563,10 @@ function ComparisonTable() {
               <span className="w-28 flex justify-center">
                 <span
                   className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ backgroundColor: 'var(--ds-brand-bg-soft)', color: 'var(--ds-brand-bg)' }}
+                  style={{
+                    backgroundColor: 'var(--ds-brand-bg-soft)',
+                    color: 'var(--ds-brand-bg)',
+                  }}
                 >
                   ✓
                 </span>
@@ -622,8 +632,8 @@ function FeaturesCta() {
           className="text-lg mb-9"
           style={{ color: 'var(--ds-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}
         >
-          No feature-gating on the trial. See the full product, decide with full information.
-          First 14 days are on us.
+          No feature-gating on the trial. See the full product, decide with full information. First
+          14 days are on us.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -747,8 +757,18 @@ function FeaturesHero() {
           className="flex flex-wrap justify-center gap-3 mt-8"
         >
           {[
-            { label: '6 Core features', color: 'var(--ds-brand-bg)', soft: 'var(--ds-brand-bg-soft)', border: 'var(--ds-brand-border)' },
-            { label: '8 Unfair advantages', color: '#8b5cf6', soft: 'rgba(139,92,246,0.10)', border: 'rgba(139,92,246,0.25)' },
+            {
+              label: '6 Core features',
+              color: 'var(--ds-brand-bg)',
+              soft: 'var(--ds-brand-bg-soft)',
+              border: 'var(--ds-brand-border)',
+            },
+            {
+              label: '8 Unfair advantages',
+              color: '#8b5cf6',
+              soft: 'rgba(139,92,246,0.10)',
+              border: 'rgba(139,92,246,0.25)',
+            },
           ].map((pill) => (
             <span
               key={pill.label}

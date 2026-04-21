@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { logout } from '@/lib/auth/service';
+import { AppIcon } from '@/components/ui/AppIcon';
 import type { Route } from 'next';
 
 interface SidebarProps {
@@ -191,20 +192,7 @@ export function Sidebar({ isOpen, onClose }: Readonly<SidebarProps>) {
           className="flex h-14 items-center gap-2.5 px-4"
           style={{ borderBottom: '1px solid var(--ds-sidebar-border)' }}
         >
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-white text-sm font-bold flex-shrink-0"
-            style={{ backgroundColor: 'var(--ds-brand-bg)' }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-              <path
-                d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A7.97 7.97 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
+          <AppIcon size={28} />
           <span
             className="flex-1 text-sm font-bold tracking-tight"
             style={{ color: 'var(--ds-text-primary)' }}

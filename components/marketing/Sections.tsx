@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { AppIcon } from '@/components/ui/AppIcon';
 
 // ─── Features Strip ───────────────────────────────────────────────────────────
 
@@ -380,9 +381,25 @@ export function CtaBanner() {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
 const FOOTER_LINKS = {
-  Product: ['Features', 'Pricing', 'Changelog', 'Roadmap'],
-  Company: ['About', 'Blog', 'Careers', 'Press'],
-  Legal: ['Privacy', 'Terms', 'Security', 'DPA'],
+  Product: [
+    { label: 'Overview', href: '/product' },
+    { label: 'Features', href: '/features' },
+    { label: 'Pricing', href: '/pricing' },
+    { label: 'Changelog', href: '#' },
+    { label: 'Roadmap', href: '#' },
+  ],
+  Company: [
+    { label: 'About', href: '#' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Careers', href: '#' },
+    { label: 'Press', href: '#' },
+  ],
+  Legal: [
+    { label: 'Privacy', href: '#' },
+    { label: 'Terms', href: '#' },
+    { label: 'Security', href: '#' },
+    { label: 'DPA', href: '#' },
+  ],
 } as const;
 
 export function Footer() {
@@ -396,20 +413,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <span
-                className="flex items-center justify-center w-7 h-7 rounded-lg"
-                style={{
-                  backgroundColor: 'var(--ds-brand-bg-soft)',
-                  border: '1px solid var(--ds-brand-border)',
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A7.97 7.97 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    fill="var(--ds-brand-bg)"
-                  />
-                </svg>
-              </span>
+              <AppIcon size={32} />
               <span
                 className="text-base font-bold"
                 style={{ color: 'var(--ds-text-primary)', fontFamily: "'Sora', sans-serif" }}
@@ -426,40 +430,38 @@ export function Footer() {
           </div>
 
           {/* Link columns */}
-          {(Object.entries(FOOTER_LINKS) as [string, readonly string[]][]).map(
-            ([section, links]) => (
-              <div key={section}>
-                <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
-                  style={{ color: 'var(--ds-text-tertiary)', fontFamily: "'DM Sans', sans-serif" }}
-                >
-                  {section}
-                </p>
-                <ul className="flex flex-col gap-3">
-                  {links.map((link) => (
-                    <li key={link}>
-                      <Link
-                        href="#"
-                        className="text-sm transition-colors duration-150"
-                        style={{
-                          color: 'var(--ds-text-tertiary)',
-                          fontFamily: "'DM Sans', sans-serif",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.color = 'var(--ds-text-primary)')
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.color = 'var(--ds-text-tertiary)')
-                        }
-                      >
-                        {link}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ),
-          )}
+          {(
+            Object.entries(FOOTER_LINKS) as [string, readonly { label: string; href: string }[]][]
+          ).map(([section, links]) => (
+            <div key={section}>
+              <p
+                className="text-xs font-semibold uppercase tracking-widest mb-4"
+                style={{ color: 'var(--ds-text-tertiary)', fontFamily: "'DM Sans', sans-serif" }}
+              >
+                {section}
+              </p>
+              <ul className="flex flex-col gap-3">
+                {links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-sm transition-colors duration-150"
+                      style={{
+                        color: 'var(--ds-text-tertiary)',
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = 'var(--ds-text-tertiary)')
+                      }
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
         {/* Bottom row */}

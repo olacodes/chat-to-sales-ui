@@ -4,28 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { useAuthStore } from '@/store/useAuthStore';
 import { restoreSession } from '@/lib/auth/service';
-
-function ChatIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72A7.97 7.97 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-        fill="var(--ds-brand-bg)"
-      />
-      <circle cx="9" cy="12" r="1" fill="white" />
-      <circle cx="12" cy="12" r="1" fill="white" />
-      <circle cx="15" cy="12" r="1" fill="white" />
-    </svg>
-  );
-}
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: 'Product', href: '/product' },
   { label: 'Features', href: '/features' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'Blog', href: '#' },
+  { label: 'Blog', href: '/blog' },
 ];
 
 export function Navbar() {
@@ -66,15 +53,7 @@ export function Navbar() {
       <nav className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 select-none">
-          <span
-            className="flex items-center justify-center w-8 h-8 rounded-xl"
-            style={{
-              backgroundColor: 'var(--ds-brand-bg-soft)',
-              border: '1px solid var(--ds-brand-border)',
-            }}
-          >
-            <ChatIcon />
-          </span>
+          <AppIcon size={36} />
           <span
             className="text-lg font-bold tracking-tight"
             style={{ color: 'var(--ds-text-primary)' }}
