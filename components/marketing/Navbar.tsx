@@ -52,7 +52,7 @@ export function Navbar() {
     >
       <nav className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 select-none">
+        <Link href="/" className="flex items-center gap-1.5 select-none">
           <AppIcon size={36} />
           <span
             className="text-lg font-bold tracking-tight"

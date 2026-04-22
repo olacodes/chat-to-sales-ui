@@ -412,7 +412,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-1.5 mb-4">
               <AppIcon size={32} />
               <span
                 className="text-base font-bold"

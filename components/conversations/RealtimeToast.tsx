@@ -4,9 +4,10 @@ import { useEffect } from 'react';
 import type { RealtimeActivity } from '@/lib/hooks/useConversationsRealtime';
 
 const icons: Record<RealtimeActivity['type'], string> = {
-  MessageReceived: '💬',
-  OrderStateChanged: '📦',
-  PaymentConfirmed: '💳',
+  'message.received': '💬',
+  'order.updated': '📦',
+  'payment.confirmed': '💳',
+  'conversation.started': '🗨️',
 };
 
 interface RealtimeToastProps {

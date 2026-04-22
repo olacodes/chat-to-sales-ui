@@ -189,7 +189,7 @@ export function Sidebar({ isOpen, onClose }: Readonly<SidebarProps>) {
       >
         {/* Brand mark + mobile close button */}
         <div
-          className="flex h-14 items-center gap-2.5 px-4"
+          className="flex h-14 items-center gap-1.5 px-4"
           style={{ borderBottom: '1px solid var(--ds-sidebar-border)' }}
         >
           <AppIcon size={28} />
