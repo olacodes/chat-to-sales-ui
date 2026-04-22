@@ -7,7 +7,7 @@ import { useWsStatus } from '@/lib/hooks/useWebSocket';
 import { useAppStore } from '@/store';
 import { conversationKeys } from '@/hooks/useConversations';
 import type {
-  MessageReceivedPayload,
+  ConversationMessageSavedPayload,
   OrderStateChangedPayload,
   PaymentConfirmedPayload,
   ConversationCreatedPayload,
@@ -63,28 +63,26 @@ export function useConversationsRealtime(): UseConversationsRealtimeReturn {
   const clearActivity = useCallback(() => setLastActivity(null), []);
 
   useEffect(() => {
-    // ── message.received ───────────────────────────────────────────────────
-    const unsubMessage = wsConnection.onMessage<MessageReceivedPayload>(
-      'message.received',
+    // ── conversation.message_saved ─────────────────────────────────────────
+    // Fires AFTER the message has been committed to the database, so it is
+    // safe to invalidate API queries here without hitting a race condition.
+    const unsubMessage = wsConnection.onMessage<ConversationMessageSavedPayload>(
+      'conversation.message_saved',
       (msg) => {
         const p = msg.payload;
-        // Normalize: backend may emit snake_case fields (conversation_id,
-        // created_at) or camelCase (conversationId, timestamp).
-        const conversationId = (p.conversationId ?? p.conversation_id) as string;
-        const timestamp = (p.timestamp ?? p.created_at) as string;
 
         const newMsg: Message = {
           id: p.id,
-          conversationId,
+          conversationId: p.conversation_id,
           role: p.sender_role,
           senderIdentifier: p.sender_identifier ?? null,
           content: p.content,
-          timestamp,
+          timestamp: p.created_at ?? msg.timestamp ?? new Date().toISOString(),
         };
 
-        // Update the React Query message cache so ChatWindow reflects the new
-        // message without a refresh.
-        const messagesKey = conversationKeys.messages(conversationId);
+        // Append the new message directly into the cache so the chat window
+        // updates instantly without waiting for a refetch.
+        const messagesKey = conversationKeys.messages(p.conversation_id);
         queryClient.setQueryData<InfiniteData<PagedOut<Message>>>(
           messagesKey,
           makeMessageUpdater(newMsg),
@@ -92,6 +90,7 @@ export function useConversationsRealtime(): UseConversationsRealtimeReturn {
 
         // Refresh the conversation list so the last-message preview updates,
         // and so a brand-new conversation becomes visible immediately.
+        // Safe to do here because the DB write has already committed.
         queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
 
         setLastActivity({

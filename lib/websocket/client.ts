@@ -27,14 +27,10 @@ const WS_BASE = (process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/ws').rep
 
 /**
  * Backend-emitted event type aliases.
- * Some backends emit semantically equivalent events under a different name
- * (e.g. FastAPI backend emits `conversation.message` while the frontend
- * canonical name is `message.received`). Alias dispatch ensures that
- * listeners registered under either name receive the event.
+ * Maps legacy or alternative event names to their canonical frontend name
+ * so existing listeners don't break if the backend changes a name.
  */
-const WS_TYPE_ALIASES: Record<string, string> = {
-  'conversation.message': 'message.received',
-};
+const WS_TYPE_ALIASES: Record<string, string> = {};
 
 const RECONNECT_BASE_MS = 1_000;
 const RECONNECT_MAX_MS = 30_000;

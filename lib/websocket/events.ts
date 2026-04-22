@@ -68,6 +68,26 @@ export interface ConversationCreatedPayload {
   created_at: string;
 }
 
+// ─── conversation.message_saved ───────────────────────────────────────────────
+
+/**
+ * Payload for `conversation.message_saved`.
+ * Published by the backend AFTER the message has been committed to the
+ * database, so it is safe to invalidate API queries on receipt.
+ */
+export interface ConversationMessageSavedPayload {
+  /** Database ID of the persisted message */
+  id: string;
+  conversation_id: string;
+  sender_role: MessageRole;
+  sender_identifier: string | null;
+  content: string;
+  created_at: string | null;
+  tenant_id: string;
+  channel: string;
+  customer_identifier: string;
+}
+
 // ─── conversation.updated ────────────────────────────────────────────────────
 
 export interface ConversationUpdatedPayload {
@@ -81,7 +101,7 @@ export interface ConversationUpdatedPayload {
 
 export type RealtimeEventType =
   | 'message.received'
-  | 'conversation.message' // backend alias for 'message.received'
+  | 'conversation.message_saved'
   | 'order.updated'
   | 'order.created'
   | 'payment.confirmed'
