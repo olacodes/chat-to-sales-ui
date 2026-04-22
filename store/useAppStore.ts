@@ -4,6 +4,13 @@ import { devtools } from 'zustand/middleware';
 // ─── Domain types ──────────────────────────────────────────────────────────────
 
 export type ConversationStatus = 'open' | 'resolved' | 'pending';
+
+export interface StaffMember {
+  id: string;
+  displayName: string | null;
+  email: string;
+  role?: string;
+}
 export type OrderStatus = 'inquiry' | 'pending' | 'confirmed' | 'paid' | 'completed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type MessageRole = 'user' | 'assistant' | 'system';
@@ -23,6 +30,7 @@ export interface Conversation {
   /** The channel-specific identifier (e.g. phone number, user id) */
   customerIdentifier: string;
   status: ConversationStatus;
+  assignedTo: StaffMember | null;
   lastMessage: string | null;
   lastMessageAt: string | null;
   unreadCount: number;

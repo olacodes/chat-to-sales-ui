@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Conversation, Message, Order } from '@/store';
+import type { Conversation, Message, Order, StaffMember } from '@/store';
 import type { ConnectionStatus } from '@/lib/websocket/client';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { InlineOrderCard } from './InlineOrderCard';
+import { AssignmentPanel } from './AssignmentPanel';
 import { Badge } from '@/components/ui/Badge';
 
 interface ChatWindowProps {
@@ -29,6 +30,13 @@ interface ChatWindowProps {
   onMarkResolved?: (conversationId: string) => void;
   /** Mobile only — called when user taps the back arrow to return to the list */
   onBack?: () => void;
+  /** Staff list for the assignment dropdown */
+  staff?: StaffMember[];
+  /** The currently authenticated user's ID */
+  currentUserId?: string | null;
+  /** Called when a staff member is selected (or null to unassign) */
+  onAssign?: (conversationId: string, userId: string | null, staffMember: StaffMember | null) => void;
+  isAssigning?: boolean;
 }
 
 const statusBadge: Record<Conversation['status'], React.ReactElement> = {
@@ -117,8 +125,12 @@ export function ChatWindow({
   onViewOrderDetails,
   onMarkResolved,
   onBack,
+  staff = [],
+  currentUserId,
+  onAssign,
+  isAssigning = false,
 }: Readonly<ChatWindowProps>) {
-  const { id, customerName, customerIdentifier, status } = conversation;
+  const { id, customerName, customerIdentifier, status, assignedTo } = conversation;
   const messages = messagesProp ?? conversation.messages;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [orderCollapsed, setOrderCollapsed] = useState(false);
@@ -227,6 +239,18 @@ export function ChatWindow({
 
         <div className="flex items-center gap-2 shrink-0">
           {statusBadge[status]}
+
+          {/* Assignment control */}
+          {onAssign && (
+            <AssignmentPanel
+              assignedTo={assignedTo}
+              staff={staff}
+              currentUserId={currentUserId ?? null}
+              isAssigning={isAssigning}
+              onAssign={(userId, staffMember) => onAssign(id, userId, staffMember)}
+            />
+          )}
+
           {status !== 'resolved' && onMarkResolved && (
             <button
               type="button"

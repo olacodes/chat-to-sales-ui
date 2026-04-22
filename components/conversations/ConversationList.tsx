@@ -4,6 +4,8 @@ import { useState } from 'react';
 import type { Conversation } from '@/store';
 import { ConversationListItem } from './ConversationListItem';
 
+export type ConversationTab = 'unassigned' | 'mine' | 'all';
+
 function EmptyListMessage({ hasSearch }: Readonly<{ hasSearch: boolean }>) {
   return hasSearch ? <>No conversations found.</> : <>No conversations yet.</>;
 }
@@ -12,6 +14,8 @@ interface ConversationListProps {
   conversations: Conversation[];
   activeId: string | null;
   onSelect: (id: string) => void;
+  /** The currently authenticated user's ID — used to filter the "Mine" tab */
+  currentUserId?: string | null;
   isLoading?: boolean;
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
@@ -21,25 +25,47 @@ interface ConversationListProps {
 const SKELETON_IDS = ['sk-1', 'sk-2', 'sk-3', 'sk-4'] as const;
 const SKELETON_WIDTHS = [55, 72, 60, 80] as const;
 
+const TAB_LABELS: Record<ConversationTab, string> = {
+  unassigned: 'Unassigned',
+  mine: 'Mine',
+  all: 'All',
+};
+
 export function ConversationList({
   conversations,
   activeId,
   onSelect,
+  currentUserId,
   isLoading = false,
   hasNextPage = false,
   isFetchingNextPage = false,
   onLoadMore,
 }: Readonly<ConversationListProps>) {
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<ConversationTab>('unassigned');
+
+  // Tab counts (computed before search filter)
+  const tabCounts: Record<ConversationTab, number> = {
+    unassigned: conversations.filter((c) => c.assignedTo === null).length,
+    mine: conversations.filter((c) => currentUserId && c.assignedTo?.id === currentUserId).length,
+    all: conversations.length,
+  };
+
+  // Apply tab filter first, then search
+  const tabFiltered = conversations.filter((c) => {
+    if (activeTab === 'unassigned') return c.assignedTo === null;
+    if (activeTab === 'mine') return currentUserId && c.assignedTo?.id === currentUserId;
+    return true; // 'all'
+  });
 
   const filtered = search.trim()
-    ? conversations.filter(
+    ? tabFiltered.filter(
         (c) =>
           c.customerName.toLowerCase().includes(search.toLowerCase()) ||
           c.customerIdentifier.toLowerCase().includes(search.toLowerCase()) ||
           c.lastMessage?.toLowerCase().includes(search.toLowerCase()),
       )
-    : conversations;
+    : tabFiltered;
 
   // Sort by most recent activity DESC
   const sorted = [...filtered].sort((a, b) => {
@@ -126,15 +152,53 @@ export function ConversationList({
     >
       {/* Header */}
       <div
-        className="px-4 py-3 shrink-0"
+        className="px-4 pt-3 pb-0 shrink-0"
         style={{ borderBottom: '1px solid var(--ds-border-base)' }}
       >
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+        <h2 className="text-sm font-semibold mb-2" style={{ color: 'var(--ds-text-primary)' }}>
           Conversations
         </h2>
-        <p className="text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
-          {conversations.length} total
-        </p>
+        {/* Tabs */}
+        <div className="flex gap-0" role="tablist" aria-label="Conversation filter">
+          {(Object.keys(TAB_LABELS) as ConversationTab[]).map((tab) => {
+            const isActive = activeTab === tab;
+            const count = tabCounts[tab];
+            return (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab)}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors relative"
+                style={{
+                  color: isActive ? 'var(--ds-brand-text)' : 'var(--ds-text-secondary)',
+                  borderBottom: isActive
+                    ? '2px solid var(--ds-brand-bg)'
+                    : '2px solid transparent',
+                  marginBottom: '-1px',
+                }}
+              >
+                {TAB_LABELS[tab]}
+                {count > 0 && (
+                  <span
+                    className="rounded-full px-1.5 py-px text-[10px] font-bold leading-none"
+                    style={{
+                      backgroundColor: isActive
+                        ? 'var(--ds-brand-bg)'
+                        : 'var(--ds-bg-elevated)',
+                      color: isActive
+                        ? 'var(--ds-text-inverse)'
+                        : 'var(--ds-text-tertiary)',
+                    }}
+                  >
+                    {count > 99 ? '99+' : count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Search */}

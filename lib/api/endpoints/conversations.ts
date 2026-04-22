@@ -7,13 +7,15 @@
 
 import { apiClient } from '../client';
 import type {
+  AssignConversationPayload,
+  AssignmentOut,
   ConversationOut,
   MessageOut,
   PagedOut,
   CreateConversationPayload,
   AddMessagePayload,
 } from '../types';
-import type { Conversation, Message } from '@/store';
+import type { Conversation, Message, StaffMember } from '@/store';
 
 // ─── Mappers ──────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,15 @@ function mapMessage(m: MessageOut): Message {
   };
 }
 
+function mapStaffMember(s: { id: string; display_name: string | null; email: string; role?: string }): StaffMember {
+  return {
+    id: s.id,
+    displayName: s.display_name,
+    email: s.email,
+    role: s.role,
+  };
+}
+
 function mapConversation(c: ConversationOut): Conversation {
   return {
     id: c.id,
@@ -35,6 +46,7 @@ function mapConversation(c: ConversationOut): Conversation {
     customerIdentifier: c.customer_identifier,
     // Backend uses 'closed'; store uses 'resolved'
     status: c.status === 'closed' ? 'resolved' : c.status,
+    assignedTo: c.assigned_to ? mapStaffMember(c.assigned_to) : null,
     lastMessage: c.messages?.at(-1)?.content ?? null,
     lastMessageAt: c.messages?.at(-1)?.created_at ?? null,
     unreadCount: 0,
@@ -125,6 +137,20 @@ export const conversationsApi = {
     return apiClient
       .post<ConversationOut>(`${BASE}/conversations`, payload, undefined, signal)
       .then(mapConversation);
+  },
+
+  /** PATCH /api/v1/conversations/{id}/assign */
+  assign(
+    conversationId: string,
+    payload: AssignConversationPayload,
+    signal?: AbortSignal,
+  ): Promise<AssignmentOut> {
+    return apiClient.patch<AssignmentOut>(
+      `${BASE}/conversations/${encodeURIComponent(conversationId)}/assign`,
+      payload,
+      undefined,
+      signal,
+    );
   },
 
   /** POST /api/v1/conversations/{id}/messages */

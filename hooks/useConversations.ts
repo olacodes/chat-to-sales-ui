@@ -22,10 +22,11 @@ import {
   type QueryKey,
 } from '@tanstack/react-query';
 import { conversationsApi } from '@/lib/api/endpoints/conversations';
+import { staffApi } from '@/lib/api/endpoints/staff';
 import { notificationsApi } from '@/lib/api/endpoints/notifications';
 import { getTenantId } from '@/lib/auth/tokenStore';
 import type { PagedOut } from '@/lib/api/types';
-import type { Conversation, Message } from '@/store';
+import type { Conversation, Message, StaffMember } from '@/store';
 import type { AddMessagePayload } from '@/lib/api/types';
 
 // ─── Query key factory ────────────────────────────────────────────────────────
@@ -226,6 +227,112 @@ export function useSendMessage() {
       });
       // Also refresh the conversation list so lastMessage / lastMessageAt update
       queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
+    },
+  });
+}
+
+// ─── useStaff ─────────────────────────────────────────────────────────────────
+
+export const staffKeys = {
+  all: ['staff'] as const,
+  list: () => [...staffKeys.all, 'list'] as const,
+};
+
+/**
+ * Fetch all staff members for the current tenant.
+ * Used to populate the assignment dropdown.
+ */
+export function useStaff() {
+  return useQuery<StaffMember[], Error>({
+    queryKey: staffKeys.list(),
+    queryFn: ({ signal }) => staffApi.list(signal),
+    staleTime: 60_000,
+  });
+}
+
+// ─── useAssignConversation ────────────────────────────────────────────────────
+
+interface AssignVariables {
+  conversationId: string;
+  /** null to unassign */
+  userId: string | null;
+  /** The StaffMember object for the optimistic update — pass null to unassign */
+  staffMember: StaffMember | null;
+  assignedByUserId?: string | null;
+}
+
+/**
+ * Assign or unassign a conversation with an optimistic update.
+ *
+ * The assignedTo field is patched immediately in the cache so the UI updates
+ * without waiting for the server round-trip. Rolls back on error.
+ */
+export function useAssignConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, AssignVariables>({
+    mutationFn: ({ conversationId, userId, assignedByUserId }) =>
+      conversationsApi.assign(conversationId, {
+        user_id: userId,
+        assigned_by_user_id: assignedByUserId,
+      }),
+
+    onMutate: async ({ conversationId, staffMember }) => {
+      await queryClient.cancelQueries({ queryKey: conversationKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: conversationKeys.detail(conversationId) });
+
+      const previousLists = queryClient.getQueriesData<InfiniteData<PagedOut<Conversation>>>({
+        queryKey: conversationKeys.lists(),
+      });
+      const previousDetail = queryClient.getQueryData<Conversation>(
+        conversationKeys.detail(conversationId),
+      );
+
+      // Patch in list caches
+      queryClient.setQueriesData<InfiniteData<PagedOut<Conversation>>>(
+        { queryKey: conversationKeys.lists() },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((c) =>
+                c.id === conversationId ? { ...c, assignedTo: staffMember } : c,
+              ),
+            })),
+          };
+        },
+      );
+
+      // Patch detail cache if present
+      queryClient.setQueryData<Conversation>(
+        conversationKeys.detail(conversationId),
+        (old) => old ? { ...old, assignedTo: staffMember } : old,
+      );
+
+      return { previousLists, previousDetail };
+    },
+
+    onError: (_err, { conversationId }, context) => {
+      const ctx = context as {
+        previousLists?: [QueryKey, InfiniteData<PagedOut<Conversation>> | undefined][];
+        previousDetail?: Conversation;
+      } | undefined;
+
+      if (ctx?.previousLists) {
+        for (const [key, data] of ctx.previousLists) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+      if (ctx?.previousDetail !== undefined) {
+        queryClient.setQueryData(conversationKeys.detail(conversationId), ctx.previousDetail);
+      }
+    },
+
+    onSettled: (_data, _error, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: conversationKeys.detail(conversationId) });
     },
   });
 }

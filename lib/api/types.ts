@@ -19,6 +19,19 @@ export interface PagedOut<T> {
   total?: number;
 }
 
+// ─── Staff ────────────────────────────────────────────────────────────────────
+
+export interface StaffMemberOut {
+  id: string;
+  display_name: string | null;
+  email: string;
+  role?: string;
+}
+
+export interface StaffListResponse {
+  items: StaffMemberOut[];
+}
+
 // ─── Conversations ────────────────────────────────────────────────────────────
 
 /** Shape returned by the list endpoint (lightweight, no messages). */
@@ -28,6 +41,7 @@ export interface ConversationListItem {
   customer_identifier: string;
   customer_name?: string;
   status: 'open' | 'closed' | 'pending';
+  assigned_to?: StaffMemberOut | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +53,7 @@ export interface ConversationOut {
   customer_identifier: string;
   customer_name?: string;
   status: 'open' | 'closed' | 'pending';
+  assigned_to?: StaffMemberOut | null;
   created_at: string;
   updated_at: string;
   /** Included when fetching a specific conversation */
@@ -105,6 +120,16 @@ export interface PaymentOut {
 }
 
 // ─── Request payloads ─────────────────────────────────────────────────────────
+
+export interface AssignConversationPayload {
+  user_id: string | null;
+  assigned_by_user_id?: string | null;
+}
+
+export interface AssignmentOut {
+  conversation_id: string;
+  assigned_to: StaffMemberOut | null;
+}
 
 export interface CreateConversationPayload {
   tenant_id: string;

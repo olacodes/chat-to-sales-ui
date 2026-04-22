@@ -10,7 +10,14 @@ import { WsEventSimulator } from '@/components/conversations/WsEventSimulator';
 import { useConversationsRealtime } from '@/lib/hooks/useConversationsRealtime';
 import { webhookService } from '@/lib/api/services';
 import { ApiError } from '@/lib/api/client';
-import { useConversations, useMessages, useSendMessage } from '@/hooks/useConversations';
+import {
+  useConversations,
+  useMessages,
+  useSendMessage,
+  useStaff,
+  useAssignConversation,
+} from '@/hooks/useConversations';
+import type { StaffMember } from '@/store';
 
 // ─── Inbound message simulator ────────────────────────────────────────────────
 
@@ -174,6 +181,8 @@ export default function ConversationsPage() {
   const setActiveConversation = useAppStore((s) => s.setActiveConversation);
   const updateConversation = useAppStore((s) => s.updateConversation);
   const orders = useAppStore((s) => s.orders);
+  const currentUser = useAuthStore((s) => s.user);
+  const currentUserId = currentUser?.user_id ?? null;
 
   // ── React Query data ───────────────────────────────────────────────────────
   const {
@@ -183,6 +192,9 @@ export default function ConversationsPage() {
     isFetchingNextPage: isFetchingMoreConvs,
     fetchNextPage: fetchMoreConvs,
   } = useConversations();
+
+  const { data: staff = [] } = useStaff();
+  const { mutate: assignConversation, isPending: isAssigning } = useAssignConversation();
 
   const conversations = convsData?.pages.flatMap((p) => p.items) ?? [];
 
@@ -219,6 +231,19 @@ export default function ConversationsPage() {
     updateConversation(conversationId, { status: 'resolved' });
   }
 
+  function handleAssign(
+    conversationId: string,
+    userId: string | null,
+    staffMember: StaffMember | null,
+  ) {
+    assignConversation({
+      conversationId,
+      userId,
+      staffMember,
+      assignedByUserId: currentUserId,
+    });
+  }
+
   function handleSelectConversation(id: string) {
     setActiveConversation(id);
   }
@@ -239,6 +264,7 @@ export default function ConversationsPage() {
           conversations={conversations}
           activeId={activeConversationId}
           onSelect={handleSelectConversation}
+          currentUserId={currentUserId}
           isLoading={isLoadingConvs}
           hasNextPage={hasMoreConvs}
           isFetchingNextPage={isFetchingMoreConvs}
@@ -262,6 +288,10 @@ export default function ConversationsPage() {
             linkedOrder={linkedOrder}
             onMarkResolved={handleMarkResolved}
             onBack={handleBack}
+            staff={staff}
+            currentUserId={currentUserId}
+            onAssign={handleAssign}
+            isAssigning={isAssigning}
           />
         ) : (
           <InboundMessageForm />

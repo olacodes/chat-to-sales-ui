@@ -9,13 +9,14 @@ import { orderKeys } from '@/hooks/useOrders';
 import { paymentKeys } from '@/hooks/usePayments';
 import { dashboardKeys } from '@/hooks/useDashboard';
 import type {
+  ConversationAssignedPayload,
   MessageReceivedPayload,
   OrderStateChangedPayload,
   PaymentConfirmedPayload,
   ConversationCreatedPayload,
   ConversationUpdatedPayload,
 } from '@/lib/websocket/events';
-import type { Conversation, Message, Order, Payment } from '@/store';
+import type { Conversation, Message, Order, Payment, StaffMember } from '@/store';
 import type { PagedOut } from '@/lib/api/types';
 
 interface WebSocketProviderProps {
@@ -250,6 +251,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           customerIdentifier: p.customer_identifier,
           customerName: p.customer_name ?? p.customer_identifier,
           status: domainStatus,
+          assignedTo: null,
           lastMessage: null,
           lastMessageAt: p.created_at,
           unreadCount: 0,
@@ -300,6 +302,45 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       },
     );
 
+    // ── conversation.assigned ─────────────────────────────────────────────────
+    const unsubConvAssigned = wsConnection.onMessage<ConversationAssignedPayload>(
+      'conversation.assigned',
+      (msg) => {
+        const p = msg.payload;
+        log('conversation.assigned', { id: p.conversation_id, assignedTo: p.assigned_to?.id });
+
+        const assignedTo: StaffMember | null = p.assigned_to
+          ? {
+              id: p.assigned_to.id,
+              displayName: p.assigned_to.display_name,
+              email: p.assigned_to.email,
+            }
+          : null;
+
+        // Patch assignedTo in every paginated conversation list
+        qc.setQueriesData<InfiniteData<PagedOut<Conversation>>>(
+          { queryKey: conversationKeys.lists() },
+          (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: page.items.map((c) =>
+                  c.id === p.conversation_id ? { ...c, assignedTo } : c,
+                ),
+              })),
+            };
+          },
+        );
+
+        // Patch detail cache if present
+        qc.setQueryData<Conversation>(conversationKeys.detail(p.conversation_id), (old) =>
+          old ? { ...old, assignedTo } : old,
+        );
+      },
+    );
+
     return () => {
       unsubMessage();
       unsubOrderUpdated();
@@ -308,6 +349,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       unsubConvStarted();
       unsubConvUpdated();
       unsubConvClosed();
+      unsubConvAssigned();
       wsConnection.disconnect();
     };
   }, [tenantId, qc]);

@@ -97,6 +97,20 @@ export interface ConversationUpdatedPayload {
   updated_at: string;
 }
 
+// ─── conversation.assigned ───────────────────────────────────────────────────
+
+export interface ConversationAssignedStaffMember {
+  id: string;
+  display_name: string | null;
+  email: string;
+}
+
+export interface ConversationAssignedPayload {
+  conversation_id: string;
+  assigned_to: ConversationAssignedStaffMember | null;
+  assigned_by_user_id: string | null;
+}
+
 // ─── Discriminated union ──────────────────────────────────────────────────────
 
 export type RealtimeEventType =
@@ -107,7 +121,8 @@ export type RealtimeEventType =
   | 'payment.confirmed'
   | 'conversation.started'
   | 'conversation.updated'
-  | 'conversation.closed';
+  | 'conversation.closed'
+  | 'conversation.assigned';
 
 export type RealtimeEventPayload =
   | { type: 'message.received'; payload: MessageReceivedPayload }
@@ -116,4 +131,5 @@ export type RealtimeEventPayload =
   | { type: 'payment.confirmed'; payload: PaymentConfirmedPayload }
   | { type: 'conversation.started'; payload: ConversationCreatedPayload }
   | { type: 'conversation.updated'; payload: ConversationUpdatedPayload }
-  | { type: 'conversation.closed'; payload: ConversationUpdatedPayload };
+  | { type: 'conversation.closed'; payload: ConversationUpdatedPayload }
+  | { type: 'conversation.assigned'; payload: ConversationAssignedPayload };
