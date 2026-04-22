@@ -25,6 +25,17 @@ function logWs(tag: string, ...args: unknown[]) {
 
 const WS_BASE = (process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/ws').replace(/\/$/, '');
 
+/**
+ * Backend-emitted event type aliases.
+ * Some backends emit semantically equivalent events under a different name
+ * (e.g. FastAPI backend emits `conversation.message` while the frontend
+ * canonical name is `message.received`). Alias dispatch ensures that
+ * listeners registered under either name receive the event.
+ */
+const WS_TYPE_ALIASES: Record<string, string> = {
+  'conversation.message': 'message.received',
+};
+
 const RECONNECT_BASE_MS = 1_000;
 const RECONNECT_MAX_MS = 30_000;
 const HEARTBEAT_INTERVAL_MS = 25_000;
@@ -206,6 +217,14 @@ export class WebSocketClient {
     if (message.type) {
       logWs('event', message.type, message.payload);
       this.messageListeners.get(message.type)?.forEach((l) => l(message));
+
+      // Fire alias listeners so both the canonical name and the backend-emitted
+      // name resolve to the same handler set (e.g. 'conversation.message' →
+      // 'message.received').
+      const alias = WS_TYPE_ALIASES[message.type];
+      if (alias) {
+        this.messageListeners.get(alias)?.forEach((l) => l(message));
+      }
     }
   }
 

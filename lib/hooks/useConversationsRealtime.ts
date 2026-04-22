@@ -67,15 +67,18 @@ export function useConversationsRealtime(): UseConversationsRealtimeReturn {
     const unsubMessage = wsConnection.onMessage<MessageReceivedPayload>(
       'message.received',
       (msg) => {
-        const { id, conversationId, sender_role, sender_identifier, content, timestamp } =
-          msg.payload;
+        const p = msg.payload;
+        // Normalize: backend may emit snake_case fields (conversation_id,
+        // created_at) or camelCase (conversationId, timestamp).
+        const conversationId = (p.conversationId ?? p.conversation_id) as string;
+        const timestamp = (p.timestamp ?? p.created_at) as string;
 
         const newMsg: Message = {
-          id,
+          id: p.id,
           conversationId,
-          role: sender_role,
-          senderIdentifier: sender_identifier ?? null,
-          content,
+          role: p.sender_role,
+          senderIdentifier: p.sender_identifier ?? null,
+          content: p.content,
           timestamp,
         };
 

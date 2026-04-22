@@ -90,22 +90,32 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       'message.received',
       (msg) => {
         const p = msg.payload;
-        log('message.received', { id: p.id, conversationId: p.conversationId });
+        // Normalize: backend may emit snake_case fields (conversation_id,
+        // created_at) or camelCase (conversationId, timestamp) depending on
+        // the serialization config. Handle both to stay resilient.
+        const conversationId = (p.conversationId ?? p.conversation_id) as string;
+        const timestamp = (p.timestamp ?? p.created_at) as string;
+
+        log('message.received', { id: p.id, conversationId });
 
         const message: Message = {
           id: p.id,
-          conversationId: p.conversationId,
+          conversationId,
           role: p.sender_role,
           senderIdentifier: p.sender_identifier ?? null,
           content: p.content,
-          timestamp: p.timestamp,
+          timestamp,
         };
 
-        // Append to messages infinite query (no-op if conversation not yet opened)
+        // Append to messages infinite query. If the messages cache doesn't
+        // exist yet for this conversation, create a seed page so the message
+        // is visible immediately when the user opens the conversation.
         qc.setQueryData<InfiniteData<PagedOut<Message>>>(
-          conversationKeys.messages(p.conversationId),
+          conversationKeys.messages(conversationId),
           (old) => {
-            if (!old?.pages?.length) return old;
+            if (!old?.pages?.length) {
+              return { pages: [{ items: [message], next_cursor: null }], pageParams: [undefined] };
+            }
             const pages = [...old.pages];
             const last = pages.length - 1;
             pages[last] = { ...pages[last], items: [...pages[last].items, message] };
@@ -114,9 +124,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         );
 
         // Update lastMessage + unreadCount across all paginated conversation lists.
-        // If the conversation isn't found (e.g. first message of a brand-new
-        // conversation whose 'conversation.started' event raced / was missed),
-        // fall back to a full invalidation so the list is refetched.
+        // If the conversation isn't found fall back to a full invalidation.
         let foundInList = false;
         qc.setQueriesData<InfiniteData<PagedOut<Conversation>>>(
           { queryKey: conversationKeys.lists() },
@@ -127,12 +135,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
               pages: old.pages.map((page) => ({
                 ...page,
                 items: page.items.map((c) => {
-                  if (c.id !== p.conversationId) return c;
+                  if (c.id !== conversationId) return c;
                   foundInList = true;
                   return {
                     ...c,
                     lastMessage: p.content,
-                    lastMessageAt: p.timestamp,
+                    lastMessageAt: timestamp,
                     unreadCount: c.unreadCount + 1,
                   };
                 }),
@@ -147,12 +155,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         }
 
         // Patch conversation detail if it's already in cache
-        qc.setQueryData<Conversation>(conversationKeys.detail(p.conversationId), (old) =>
+        qc.setQueryData<Conversation>(conversationKeys.detail(conversationId), (old) =>
           old
             ? {
                 ...old,
                 lastMessage: p.content,
-                lastMessageAt: p.timestamp,
+                lastMessageAt: timestamp,
                 messages: [...old.messages, message],
               }
             : old,

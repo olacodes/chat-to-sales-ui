@@ -16,13 +16,26 @@ import type { MessageRole, OrderStatus } from '@/store';
 
 // ─── message.received ─────────────────────────────────────────────────────────
 
+/**
+ * Payload for the `message.received` (or `conversation.message`) event.
+ *
+ * The backend may serialise field names in camelCase or snake_case depending
+ * on its Pydantic/serialiser configuration, so both variants are declared as
+ * optional. At least one of each pair will be present at runtime.
+ */
 export interface MessageReceivedPayload {
   id: string;
-  conversationId: string;
+  /** camelCase variant */
+  conversationId?: string;
+  /** snake_case variant (Python/FastAPI default) */
+  conversation_id?: string;
   sender_role: MessageRole;
   sender_identifier?: string | null;
   content: string;
-  timestamp: string;
+  /** camelCase variant */
+  timestamp?: string;
+  /** snake_case variant (Python/FastAPI default) */
+  created_at?: string;
 }
 
 // ─── order.updated / order.created ───────────────────────────────────────────
@@ -68,6 +81,7 @@ export interface ConversationUpdatedPayload {
 
 export type RealtimeEventType =
   | 'message.received'
+  | 'conversation.message' // backend alias for 'message.received'
   | 'order.updated'
   | 'order.created'
   | 'payment.confirmed'
