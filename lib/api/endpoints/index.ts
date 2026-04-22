@@ -13,3 +13,4 @@ export * from './orders';
 export * from './payments';
 export * from './dashboard';
 export * from './notifications';
+export * from './reports';

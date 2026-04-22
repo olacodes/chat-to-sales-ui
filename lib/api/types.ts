@@ -238,6 +238,35 @@ export interface RecentActivityOut {
   [key: string]: unknown;
 }
 
+// ─── Reports ──────────────────────────────────────────────────────────────────
+
+export interface ReportConfigOut {
+  id: string;
+  tenant_id: string;
+  enabled: boolean;
+  recipient_phone: string | null;
+  timezone: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportConfigUpdate {
+  enabled?: boolean;
+  recipient_phone?: string | null;
+  timezone?: string;
+}
+
+export interface SendPreviewResponse {
+  message: string;
+  preview_text: string;
+}
+
+export interface TriggerWeeklyResponse {
+  message: string;
+  week_start: string;
+  status: string;
+}
+
 /** @deprecated Use DashboardOverviewOut */
 export interface DashboardSummaryOut extends DashboardOverviewOut {
   total_conversations: number;
