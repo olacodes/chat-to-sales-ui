@@ -43,7 +43,6 @@ export interface Conversation {
   lastMessageAt: string | null;
   unreadCount: number;
   messages: Message[];
-  snoozedUntil?: string | null;
 }
 
 export interface ScheduledMessage {

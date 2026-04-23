@@ -2,7 +2,6 @@
 
 import type { Conversation, ConversationStatus } from '@/store';
 import { formatRelativeTime, getInitials } from './utils';
-import { formatScheduledTime } from '@/lib/utils/snoozePresets';
 
 const statusDotColor: Record<ConversationStatus, string> = {
   open: 'var(--ds-success-dot)',
@@ -14,22 +13,19 @@ interface ConversationListItemProps {
   conversation: Conversation;
   isActive: boolean;
   onClick: () => void;
-  muted?: boolean;
 }
 
 export function ConversationListItem({
   conversation,
   isActive,
   onClick,
-  muted = false,
 }: Readonly<ConversationListItemProps>) {
-  const { customerName, customerIdentifier, status, lastMessage, lastMessageAt, unreadCount, snoozedUntil } =
+  const { customerName, customerIdentifier, status, lastMessage, lastMessageAt, unreadCount } =
     conversation;
 
   const displayName = customerName || customerIdentifier;
   const initials = getInitials(displayName);
   const hasUnread = unreadCount > 0;
-  const isSnoozed = Boolean(snoozedUntil);
 
   return (
     <button
@@ -40,19 +36,12 @@ export function ConversationListItem({
       style={{
         backgroundColor: isActive ? 'var(--ds-sidebar-item-active-bg)' : undefined,
         borderLeftColor: isActive ? 'var(--ds-brand-bg)' : 'transparent',
-        opacity: muted && !isActive ? 0.5 : 1,
       }}
       onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)';
-          if (muted) e.currentTarget.style.opacity = '0.75';
-        }
+        if (!isActive) e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)';
       }}
       onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.backgroundColor = '';
-          if (muted) e.currentTarget.style.opacity = '0.5';
-        }
+        if (!isActive) e.currentTarget.style.backgroundColor = '';
       }}
     >
       {/* Avatar with status dot */}
@@ -111,20 +100,6 @@ export function ConversationListItem({
           >
             {lastMessage ?? 'No messages yet'}
           </p>
-          {isSnoozed && snoozedUntil && !hasUnread && (
-            <span
-              className="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium"
-              style={{
-                backgroundColor: 'var(--ds-warning-bg)',
-                color: 'var(--ds-warning-text)',
-              }}
-            >
-              <svg className="h-2.5 w-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
-                <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
-              </svg>
-              {formatScheduledTime(snoozedUntil)}
-            </span>
-          )}
           {hasUnread && (
             <span
               className="shrink-0 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center animate-badge-pop"

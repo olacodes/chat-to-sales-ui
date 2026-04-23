@@ -17,7 +17,6 @@ import {
   useSendMessage,
   useStaff,
   useAssignConversation,
-  useSnoozeConversation,
   useScheduledMessages,
   useCreateScheduledMessage,
   useCancelScheduledMessage,
@@ -216,7 +215,6 @@ export default function ConversationsPage() {
 
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
   const { mutate: reactToMessage } = useReactToMessage();
-  const { mutate: snoozeConversation } = useSnoozeConversation();
   const { data: scheduledMessages = [] } = useScheduledMessages(activeConversationId);
   const { mutate: createScheduledMessage } = useCreateScheduledMessage();
   const { mutate: cancelScheduledMessage } = useCancelScheduledMessage();
@@ -269,10 +267,6 @@ export default function ConversationsPage() {
     setActiveConversation(null);
   }
 
-  function handleSnooze(conversationId: string, isoString: string) {
-    snoozeConversation({ conversationId, snoozedUntil: isoString });
-  }
-
   function handleScheduleMessage(conversationId: string, content: string, scheduledFor: string) {
     createScheduledMessage({ conversationId, payload: { content, scheduled_for: scheduledFor } });
   }
@@ -298,7 +292,6 @@ export default function ConversationsPage() {
           hasNextPage={hasMoreConvs}
           isFetchingNextPage={isFetchingMoreConvs}
           onLoadMore={() => fetchMoreConvs()}
-          onSnooze={handleSnooze}
         />
       </div>
 
@@ -323,7 +316,6 @@ export default function ConversationsPage() {
             onAssign={handleAssign}
             isAssigning={isAssigning}
             onReact={handleReact}
-            onSnooze={handleSnooze}
             scheduledMessages={scheduledMessages}
             onCancelScheduledMessage={handleCancelScheduledMessage}
             onScheduleMessage={handleScheduleMessage}

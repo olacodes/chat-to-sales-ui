@@ -49,7 +49,7 @@ export function SnoozePopover({ onSelect, onClose, direction = 'down' }: Readonl
     >
       <div className="px-3 py-2" style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}>
         <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>
-          Remind me
+          Send later
         </p>
       </div>
       {presets.map((preset) => (

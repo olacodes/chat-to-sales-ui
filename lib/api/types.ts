@@ -60,8 +60,6 @@ export interface ConversationOut {
   messages?: MessageOut[];
   /** Included on list responses in place of the full messages array */
   last_message?: { content: string; timestamp: string } | null;
-  /** Set when a snooze has expired — backend excludes future snoozes */
-  snoozed_until?: string | null;
 }
 
 // ─── Scheduled Messages ───────────────────────────────────────────────────────

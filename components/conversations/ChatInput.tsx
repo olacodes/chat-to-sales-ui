@@ -223,7 +223,7 @@ export function ChatInput({
 
         {/* Schedule button — only visible when there is text and onSchedule is provided */}
         {onSchedule && (
-          <div className="relative mb-0.5">
+          <div className="relative mb-0.5 group/sched-tip">
             <button
               type="button"
               aria-label="Schedule message"
@@ -234,10 +234,17 @@ export function ChatInput({
               onMouseEnter={(e) => { if (canSend) e.currentTarget.style.color = 'var(--ds-text-secondary)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds-text-tertiary)'; }}
             >
+              {/* Calendar icon — schedule message */}
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
-                <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </button>
+            {canSend && (
+              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-medium opacity-0 transition-opacity group-hover/sched-tip:opacity-100 z-50"
+                style={{ backgroundColor: 'var(--ds-bg-inverted, #111)', color: 'var(--ds-text-inverse, #fff)' }}>
+                Schedule message
+              </span>
+            )}
             {scheduleOpen && canSend && (
               <SnoozePopover
                 direction="up"

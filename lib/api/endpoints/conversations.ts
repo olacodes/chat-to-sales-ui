@@ -62,7 +62,6 @@ function mapConversation(c: ConversationOut): Conversation {
     lastMessageAt: c.last_message?.timestamp ?? c.messages?.at(-1)?.created_at ?? null,
     unreadCount: 0,
     messages: (c.messages ?? []).map(mapMessage),
-    snoozedUntil: c.snoozed_until ?? null,
   };
 }
 
@@ -179,25 +178,6 @@ export const conversationsApi = {
         signal,
       )
       .then(mapMessage);
-  },
-
-  /**
-   * PATCH /api/v1/conversations/{id}/snooze
-   * Pass snoozedUntil=null to clear the snooze.
-   */
-  snooze(
-    conversationId: string,
-    snoozedUntil: string | null,
-    signal?: AbortSignal,
-  ): Promise<Conversation> {
-    return apiClient
-      .patch<ConversationOut>(
-        `${BASE}/conversations/${encodeURIComponent(conversationId)}/snooze`,
-        { snoozed_until: snoozedUntil },
-        undefined,
-        signal,
-      )
-      .then(mapConversation);
   },
 
   /**

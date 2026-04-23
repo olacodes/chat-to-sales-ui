@@ -8,7 +8,6 @@ import { ChatInput } from './ChatInput';
 import { InlineOrderCard } from './InlineOrderCard';
 import { AssignmentPanel } from './AssignmentPanel';
 import { Badge } from '@/components/ui/Badge';
-import { SnoozePopover } from './SnoozePopover';
 import { formatScheduledTime } from '@/lib/utils/snoozePresets';
 
 interface ChatWindowProps {
@@ -45,8 +44,6 @@ interface ChatWindowProps {
   isAssigning?: boolean;
   /** Called when the user picks an emoji reaction on a message. */
   onReact?: (conversationId: string, messageId: string, emoji: string) => void;
-  /** Called when the user picks a snooze preset from the header. */
-  onSnooze?: (conversationId: string, isoString: string) => void;
   /** Pending scheduled messages for this conversation. */
   scheduledMessages?: ScheduledMessage[];
   /** Called when the user cancels a scheduled message. */
@@ -146,7 +143,6 @@ export function ChatWindow({
   onAssign,
   isAssigning = false,
   onReact,
-  onSnooze,
   scheduledMessages = [],
   onCancelScheduledMessage,
   onScheduleMessage,
@@ -156,7 +152,6 @@ export function ChatWindow({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [orderCollapsed, setOrderCollapsed] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const [snoozeOpen, setSnoozeOpen] = useState(false);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -279,35 +274,6 @@ export function ChatWindow({
               isAssigning={isAssigning}
               onAssign={(userId, staffMember) => onAssign(id, userId, staffMember)}
             />
-          )}
-
-          {status !== 'resolved' && onSnooze && (
-            <div className="relative">
-              <button
-                type="button"
-                aria-label="Snooze conversation"
-                onClick={() => setSnoozeOpen((o) => !o)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
-                style={{
-                  color: conversation.snoozedUntil ? 'var(--ds-warning-text)' : 'var(--ds-text-secondary)',
-                  border: '1px solid var(--ds-border-base)',
-                  backgroundColor: conversation.snoozedUntil ? 'var(--ds-warning-bg)' : 'transparent',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = conversation.snoozedUntil ? 'var(--ds-warning-bg)' : ''; }}
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
-                </svg>
-              </button>
-              {snoozeOpen && (
-                <SnoozePopover
-                  direction="down"
-                  onSelect={(iso) => { onSnooze(id, iso); setSnoozeOpen(false); }}
-                  onClose={() => setSnoozeOpen(false)}
-                />
-              )}
-            </div>
           )}
 
           {status !== 'resolved' && onMarkResolved && (
