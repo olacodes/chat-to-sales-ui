@@ -7,6 +7,7 @@
 
 import { apiClient } from '../client';
 import type {
+  AddReactionPayload,
   AssignConversationPayload,
   AssignmentOut,
   ConversationOut,
@@ -15,9 +16,18 @@ import type {
   CreateConversationPayload,
   AddMessagePayload,
 } from '../types';
-import type { Conversation, Message, StaffMember } from '@/store';
+import type { Conversation, Message, Reaction, StaffMember } from '@/store';
 
 // ─── Mappers ──────────────────────────────────────────────────────────────────
+
+function mapReaction(r: { id: string; user_id: string; emoji: string; created_at: string }): Reaction {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    emoji: r.emoji,
+    createdAt: r.created_at,
+  };
+}
 
 function mapMessage(m: MessageOut): Message {
   return {
@@ -27,6 +37,7 @@ function mapMessage(m: MessageOut): Message {
     senderIdentifier: m.sender_identifier ?? null,
     content: m.content,
     timestamp: m.created_at,
+    reactions: (m.reactions ?? []).map(mapReaction),
   };
 }
 
@@ -162,6 +173,33 @@ export const conversationsApi = {
     return apiClient
       .post<MessageOut>(
         `${BASE}/conversations/${encodeURIComponent(conversationId)}/messages`,
+        payload,
+        undefined,
+        signal,
+      )
+      .then(mapMessage);
+  },
+
+  /**
+   * POST /api/v1/conversations/{conv_id}/messages/{msg_id}/reactions
+   *
+   * Toggles an emoji reaction on a message:
+   * - Same emoji already set → removes it
+   * - Different emoji already set → replaces it
+   * - No reaction yet → adds it
+   *
+   * Returns the full updated message (with reactions list) so callers can
+   * replace the cached message directly without a separate refetch.
+   */
+  addReaction(
+    conversationId: string,
+    messageId: string,
+    payload: AddReactionPayload,
+    signal?: AbortSignal,
+  ): Promise<Message> {
+    return apiClient
+      .post<MessageOut>(
+        `${BASE}/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/reactions`,
         payload,
         undefined,
         signal,

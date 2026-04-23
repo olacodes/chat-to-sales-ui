@@ -8,12 +8,13 @@ import { useAppStore } from '@/store';
 import { conversationKeys } from '@/hooks/useConversations';
 import type {
   ConversationMessageSavedPayload,
+  MessageReactionUpdatedPayload,
   OrderStateChangedPayload,
   PaymentConfirmedPayload,
   ConversationCreatedPayload,
 } from '@/lib/websocket/events';
 import type { PagedOut } from '@/lib/api/types';
-import type { Message } from '@/store';
+import type { Message, Reaction } from '@/store';
 
 export interface RealtimeActivity {
   type: 'message.received' | 'order.updated' | 'payment.confirmed' | 'conversation.started';
@@ -59,6 +60,8 @@ export function useConversationsRealtime(): UseConversationsRealtimeReturn {
   // Orders and payments still live in Zustand
   const updateOrder = useAppStore((s) => s.updateOrder);
   const updatePayment = useAppStore((s) => s.updatePayment);
+  const incrementUnread = useAppStore((s) => s.incrementUnread);
+  const activeConversationId = useAppStore((s) => s.activeConversationId);
 
   const clearActivity = useCallback(() => setLastActivity(null), []);
 
@@ -78,6 +81,7 @@ export function useConversationsRealtime(): UseConversationsRealtimeReturn {
           senderIdentifier: p.sender_identifier ?? null,
           content: p.content,
           timestamp: p.created_at ?? msg.timestamp ?? new Date().toISOString(),
+          reactions: [],
         };
 
         // Append the new message directly into the cache so the chat window
@@ -92,6 +96,12 @@ export function useConversationsRealtime(): UseConversationsRealtimeReturn {
         // and so a brand-new conversation becomes visible immediately.
         // Safe to do here because the DB write has already committed.
         queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
+
+        // Increment the unread badge only for conversations the user is not
+        // currently viewing. The active conversation is considered "read".
+        if (p.conversation_id !== activeConversationId) {
+          incrementUnread(p.conversation_id);
+        }
 
         setLastActivity({
           type: 'message.received',
@@ -144,13 +154,46 @@ export function useConversationsRealtime(): UseConversationsRealtimeReturn {
       },
     );
 
+    // ── message.reaction_updated ───────────────────────────────────────────
+    // Fires after a reaction is toggled. Patches the message in the RQ cache
+    // with the authoritative reaction list from the server so all clients
+    // (including the one that triggered the change) stay in sync.
+    const unsubReaction = wsConnection.onMessage<MessageReactionUpdatedPayload>(
+      'message.reaction_updated',
+      (msg) => {
+        const { conversation_id, message_id, reactions } = msg.payload;
+        const messagesKey = conversationKeys.messages(conversation_id);
+
+        const mappedReactions: Reaction[] = reactions.map((r) => ({
+          id: r.id,
+          userId: r.user_id,
+          emoji: r.emoji,
+          createdAt: r.created_at,
+        }));
+
+        queryClient.setQueryData<InfiniteData<PagedOut<Message>>>(messagesKey, (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((m) =>
+                m.id === message_id ? { ...m, reactions: mappedReactions } : m,
+              ),
+            })),
+          };
+        });
+      },
+    );
+
     return () => {
       unsubMessage();
       unsubOrder();
       unsubPayment();
       unsubConversation();
+      unsubReaction();
     };
-  }, [queryClient, updateOrder, updatePayment]);
+  }, [queryClient, updateOrder, updatePayment, incrementUnread, activeConversationId]);
 
   return { status, lastActivity, clearActivity };
 }

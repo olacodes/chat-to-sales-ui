@@ -62,6 +62,18 @@ export interface ConversationOut {
 
 export type MessageSenderRole = 'user' | 'assistant' | 'system';
 
+export interface ReactionOut {
+  id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+export interface AddReactionPayload {
+  emoji: string;
+  user_id: string;
+}
+
 export interface MessageOut {
   id: string;
   conversation_id: string;
@@ -70,6 +82,7 @@ export interface MessageOut {
   content: string;
   channel: string | null;
   created_at: string;
+  reactions?: ReactionOut[];
 }
 
 // ─── Orders ───────────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAppStore } from '@/store';
 import type { Conversation } from '@/store';
 import { ConversationListItem } from './ConversationListItem';
 
@@ -43,6 +44,9 @@ export function ConversationList({
 }: Readonly<ConversationListProps>) {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ConversationTab>('unassigned');
+
+  // Unread counts live in Zustand so React Query refetches never reset them
+  const unreadCounts = useAppStore((s) => s.unreadCounts);
 
   // Tab counts (computed before search filter)
   const tabCounts: Record<ConversationTab, number> = {
@@ -119,7 +123,7 @@ export function ConversationList({
         {sorted.map((conv) => (
           <li key={conv.id} style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}>
             <ConversationListItem
-              conversation={conv}
+              conversation={{ ...conv, unreadCount: unreadCounts[conv.id] ?? 0 }}
               isActive={conv.id === activeId}
               onClick={() => onSelect(conv.id)}
             />

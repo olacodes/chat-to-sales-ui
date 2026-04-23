@@ -4,14 +4,13 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { SystemStatusCard } from '@/components/dashboard/SystemStatusCard';
-import { WebhookTriggerCard } from '@/components/dashboard/WebhookTriggerCard';
 import { useDashboardOverview, useRecentActivity } from '@/hooks/useDashboard';
 import { useOrders } from '@/hooks/useOrders';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatCurrency(amount: number, currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+function formatCurrency(amount: number, currency = 'NGN'): string {
+  return new Intl.NumberFormat('en-NG', { style: 'currency', currency }).format(amount);
 }
 
 function formatRelative(iso: string): string {
@@ -441,7 +440,7 @@ export default function DashboardPage() {
                   No activity yet
                 </p>
               ) : (
-                activity.map((item) => <ActivityRow key={item.id} item={item} />)
+                activity.slice(0, 7).map((item) => <ActivityRow key={item.id} item={item} />)
               )}
             </div>
           </Card>
@@ -488,7 +487,6 @@ export default function DashboardPage() {
           </Card>
 
           <SystemStatusCard />
-          <WebhookTriggerCard />
         </div>
       </div>
     </div>

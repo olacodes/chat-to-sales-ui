@@ -15,6 +15,13 @@ export type OrderStatus = 'inquiry' | 'pending' | 'confirmed' | 'paid' | 'comple
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type MessageRole = 'user' | 'assistant' | 'system';
 
+export interface Reaction {
+  id: string;
+  userId: string;
+  emoji: string;
+  createdAt: string;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -22,6 +29,7 @@ export interface Message {
   senderIdentifier: string | null;
   content: string;
   timestamp: string;
+  reactions: Reaction[];
 }
 
 export interface Conversation {
@@ -82,11 +90,22 @@ interface AppState {
   /** The conversation currently open in the chat panel */
   activeConversationId: string | null;
 
+  /**
+   * Unread message counts per conversation, keyed by conversation ID.
+   * Stored separately from the API-fetched conversation list so that
+   * React Query refetches never reset the counts to zero.
+   */
+  unreadCounts: Record<string, number>;
+
   // ── Conversation actions ──
   setConversations: (conversations: Conversation[]) => void;
   addConversation: (conversation: Conversation) => void;
   updateConversation: (id: string, patch: Partial<Omit<Conversation, 'id' | 'messages'>>) => void;
   setActiveConversation: (id: string | null) => void;
+
+  // ── Unread count actions ──
+  incrementUnread: (conversationId: string) => void;
+  resetUnread: (conversationId: string) => void;
 
   // ── Message actions ──
   addMessage: (message: Message) => void;
@@ -113,6 +132,7 @@ export const useAppStore = create<AppState>()(
       orders: [],
       payments: [],
       activeConversationId: null,
+      unreadCounts: {},
 
       // ── Conversation actions ──────────────────────────────────────────────────
 
@@ -141,6 +161,32 @@ export const useAppStore = create<AppState>()(
 
       setActiveConversation: (id) =>
         set({ activeConversationId: id }, false, 'conversations/setActive'),
+
+      // ── Unread count actions ──────────────────────────────────────────────────
+
+      incrementUnread: (conversationId) =>
+        set(
+          (state) => ({
+            unreadCounts: {
+              ...state.unreadCounts,
+              [conversationId]: (state.unreadCounts[conversationId] ?? 0) + 1,
+            },
+          }),
+          false,
+          'unread/increment',
+        ),
+
+      resetUnread: (conversationId) =>
+        set(
+          (state) => {
+            if (!state.unreadCounts[conversationId]) return state;
+            const next = { ...state.unreadCounts };
+            delete next[conversationId];
+            return { unreadCounts: next };
+          },
+          false,
+          'unread/reset',
+        ),
 
       // ── Message actions ───────────────────────────────────────────────────────
 

@@ -1,7 +1,86 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import type { Message, MessageRole } from '@/store';
 import { formatMessageTime, getInitials } from './utils';
+
+// ─── Reply quote parser ───────────────────────────────────────
+// Detects the pattern written by ChatInput when replying:
+//   > Sender: quoted text\n\nreply text
+
+interface ParsedReply {
+  quotedSender: string;
+  quotedText: string;
+  replyText: string;
+}
+
+function parseReplyContent(content: string): ParsedReply | null {
+  // Pattern: "> Sender: quoted text\n\nreply text"
+  // The quoted text itself may span multiple lines via the excerpt, but the
+  // double newline is the delimiter between quote and reply.
+  const match = content.match(/^> ([^:]+): ([\s\S]+?)\n\n([\s\S]+)$/);
+  if (!match) return null;
+  return {
+    quotedSender: match[1].trim(),
+    quotedText: match[2].trim(),
+    replyText: match[3].trim(),
+  };
+}
+
+// ─── Emoji picker ─────────────────────────────────────────────
+
+const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '😅', '🔥'];
+
+interface EmojiPickerProps {
+  onSelect: (emoji: string) => void;
+  onClose: () => void;
+  isOutgoing: boolean;
+}
+
+function EmojiPicker({ onSelect, onClose, isOutgoing }: Readonly<EmojiPickerProps>) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      aria-label="Emoji reactions"
+      className={`absolute bottom-full mb-1.5 z-20 flex items-center gap-1 rounded-full px-2 py-1.5 shadow-lg ${
+        isOutgoing ? 'right-0' : 'left-0'
+      }`}
+      style={{
+        backgroundColor: 'var(--ds-bg-elevated)',
+        border: '1px solid var(--ds-border-base)',
+        boxShadow: 'var(--ds-shadow-md)',
+      }}
+    >
+      {REACTIONS.map((emoji) => (
+        <button
+          key={emoji}
+          type="button"
+          aria-label={`React with ${emoji}`}
+          onClick={() => {
+            onSelect(emoji);
+            onClose();
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-lg transition-transform hover:scale-125"
+          style={{ lineHeight: 1 }}
+        >
+          {emoji}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export type DeliveryState = 'sent' | 'delivered' | 'read' | 'failed';
 
@@ -12,6 +91,12 @@ interface MessageBubbleProps {
   isGrouped: boolean;
   /** Optional delivery state for outgoing messages. */
   deliveryState?: DeliveryState;
+  /** Called when the user clicks the Reply button on this message. */
+  onReply?: (message: Message) => void;
+  /** Called when the user picks or taps an emoji reaction. */
+  onReact?: (emoji: string) => void;
+  /** The currently authenticated user's ID — used to highlight their reaction. */
+  currentUserId?: string | null;
 }
 
 /* ── Delivery indicator ──────────────────────────────────────── */
@@ -60,11 +145,7 @@ function DeliveryIcon({ state }: Readonly<{ state: DeliveryState }>) {
     );
   }
   return (
-    <span
-      className="text-[10px]"
-      style={{ color: 'var(--ds-text-tertiary)' }}
-      aria-label="Sent"
-    >
+    <span className="text-[10px]" style={{ color: 'var(--ds-text-tertiary)' }} aria-label="Sent">
       ✓
     </span>
   );
@@ -102,9 +183,16 @@ function ToolbarButton({ label, onClick, children }: Readonly<ToolbarButtonProps
 interface BubbleToolbarProps {
   isOutgoing: boolean;
   onCopy: () => void;
+  onReply: () => void;
+  onEmojiClick: () => void;
 }
 
-function BubbleToolbar({ isOutgoing, onCopy }: Readonly<BubbleToolbarProps>) {
+function BubbleToolbar({
+  isOutgoing,
+  onCopy,
+  onReply,
+  onEmojiClick,
+}: Readonly<BubbleToolbarProps>) {
   // Toolbar appears on the opposite side of the bubble alignment
   const sideClass = isOutgoing ? 'order-first mr-1' : 'order-last ml-1';
 
@@ -112,10 +200,10 @@ function BubbleToolbar({ isOutgoing, onCopy }: Readonly<BubbleToolbarProps>) {
     <div
       className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100 shrink-0 ${sideClass}`}
     >
-      <ToolbarButton label="React" onClick={() => {}}>
+      <ToolbarButton label="React" onClick={onEmojiClick}>
         😊
       </ToolbarButton>
-      <ToolbarButton label="Reply" onClick={() => {}}>
+      <ToolbarButton label="Reply" onClick={onReply}>
         <svg
           className="h-3.5 w-3.5"
           fill="none"
@@ -163,8 +251,12 @@ export function MessageBubble({
   customerName,
   isGrouped,
   deliveryState,
+  onReply,
+  onReact,
+  currentUserId,
 }: Readonly<MessageBubbleProps>) {
-  const { role, content, timestamp } = message;
+  const { role, content, timestamp, reactions } = message;
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // assistant = outgoing (right-aligned, brand green)
   // user      = incoming (left-aligned, neutral white/dark)
@@ -191,7 +283,12 @@ export function MessageBubble({
   }
 
   function handleCopy() {
-    void navigator.clipboard.writeText(content);
+    const parsed = parseReplyContent(content);
+    void navigator.clipboard.writeText(parsed ? parsed.replyText : content);
+  }
+
+  function handleReply() {
+    onReply?.(message);
   }
 
   return (
@@ -204,9 +301,7 @@ export function MessageBubble({
           isGrouped ? 'invisible' : ''
         }`}
         style={{
-          backgroundColor: isOutgoing
-            ? 'var(--ds-accent-bg-soft)'
-            : 'var(--ds-brand-bg-soft)',
+          backgroundColor: isOutgoing ? 'var(--ds-accent-bg-soft)' : 'var(--ds-brand-bg-soft)',
           color: isOutgoing ? 'var(--ds-accent-text)' : 'var(--ds-brand-text)',
         }}
         aria-hidden="true"
@@ -215,47 +310,158 @@ export function MessageBubble({
       </div>
 
       {/* Hover toolbar — flex sibling so it never clips the bubble */}
-      <BubbleToolbar isOutgoing={isOutgoing} onCopy={handleCopy} />
+      <BubbleToolbar
+        isOutgoing={isOutgoing}
+        onCopy={handleCopy}
+        onReply={handleReply}
+        onEmojiClick={() => setPickerOpen((prev) => !prev)}
+      />
 
       {/* Bubble + meta column */}
       <div
-        className={`flex max-w-[72%] flex-col gap-1 ${isOutgoing ? 'items-end' : 'items-start'}`}
+        className={`relative flex max-w-[72%] flex-col gap-1 ${isOutgoing ? 'items-end' : 'items-start'}`}
       >
+        {/* Emoji picker popover */}
+        {pickerOpen && (
+          <EmojiPicker
+            isOutgoing={isOutgoing}
+            onSelect={(emoji) => {
+              onReact?.(emoji);
+            }}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+
         {/* Sender label — only for first message in a group from customer */}
         {!isGrouped && !isOutgoing && (
-          <span
-            className="text-[10px] px-1"
-            style={{ color: 'var(--ds-text-tertiary)' }}
-          >
+          <span className="text-[10px] px-1" style={{ color: 'var(--ds-text-tertiary)' }}>
             {customerName}
           </span>
         )}
 
         {/* Bubble */}
-        <div
-          className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-            isOutgoing ? 'rounded-br-sm' : 'rounded-bl-sm'
-          }`}
-          style={
-            isOutgoing
-              ? {
-                  backgroundColor: 'var(--ds-chat-bubble-outbound)',
-                  color: 'var(--ds-chat-text-outbound)',
-                }
-              : {
-                  backgroundColor: 'var(--ds-chat-bubble-inbound)',
-                  color: 'var(--ds-chat-text-inbound)',
-                  border: '1px solid var(--ds-chat-bubble-in-border)',
-                }
+        {(() => {
+          const parsed = parseReplyContent(content);
+          const bubbleStyle = isOutgoing
+            ? {
+                backgroundColor: 'var(--ds-chat-bubble-outbound)',
+                color: 'var(--ds-chat-text-outbound)',
+              }
+            : {
+                backgroundColor: 'var(--ds-chat-bubble-inbound)',
+                color: 'var(--ds-chat-text-inbound)',
+                border: '1px solid var(--ds-chat-bubble-in-border)',
+              };
+
+          if (parsed) {
+            // WhatsApp-style: quoted block on top, reply text below
+            const quoteBarColor = isOutgoing
+              ? 'rgba(255,255,255,0.5)'
+              : 'var(--ds-brand-bg)';
+            const quoteBgColor = isOutgoing
+              ? 'rgba(0,0,0,0.1)'
+              : 'var(--ds-bg-sunken)';
+            const quoteSenderColor = isOutgoing
+              ? 'rgba(255,255,255,0.9)'
+              : 'var(--ds-brand-text)';
+            const quoteTextColor = isOutgoing
+              ? 'rgba(255,255,255,0.75)'
+              : 'var(--ds-text-secondary)';
+
+            return (
+              <div
+                className={`rounded-2xl text-sm leading-relaxed overflow-hidden ${
+                  isOutgoing ? 'rounded-br-sm' : 'rounded-bl-sm'
+                }`}
+                style={bubbleStyle}
+              >
+                {/* Quoted block */}
+                <div
+                  className="flex gap-0 mx-2 mt-2 mb-0 rounded-lg overflow-hidden"
+                  style={{ backgroundColor: quoteBgColor }}
+                >
+                  {/* Colored left bar */}
+                  <div
+                    className="w-1 shrink-0 rounded-l-lg"
+                    style={{ backgroundColor: quoteBarColor }}
+                  />
+                  <div className="flex flex-col gap-0.5 px-2.5 py-2 min-w-0">
+                    <span
+                      className="text-[11px] font-semibold leading-none"
+                      style={{ color: quoteSenderColor }}
+                    >
+                      {parsed.quotedSender}
+                    </span>
+                    <span
+                      className="text-xs leading-snug line-clamp-2"
+                      style={{ color: quoteTextColor }}
+                    >
+                      {parsed.quotedText}
+                    </span>
+                  </div>
+                </div>
+                {/* Reply text */}
+                <div className="px-3.5 py-2.5">{parsed.replyText}</div>
+              </div>
+            );
           }
-        >
-          {content}
-        </div>
+
+          return (
+            <div
+              className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                isOutgoing ? 'rounded-br-sm' : 'rounded-bl-sm'
+              }`}
+              style={bubbleStyle}
+            >
+              {content}
+            </div>
+          );
+        })()}
+
+        {/* Reaction badges — grouped by emoji, counts reflect all reactors */}
+        {reactions.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {Array.from(
+              reactions.reduce((acc, r) => {
+                acc.set(r.emoji, (acc.get(r.emoji) ?? 0) + 1);
+                return acc;
+              }, new Map<string, number>()),
+            ).map(([emoji, count]) => {
+              const isMine = reactions.some(
+                (r) => r.emoji === emoji && r.userId === currentUserId,
+              );
+              return (
+                <button
+                  key={emoji}
+                  type="button"
+                  aria-label={`${emoji} reaction — ${count}. Click to ${isMine ? 'remove' : 'add'}.`}
+                  onClick={() => onReact?.(emoji)}
+                  className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-sm transition-opacity hover:opacity-70"
+                  style={{
+                    backgroundColor: isMine
+                      ? 'var(--ds-accent-bg-soft)'
+                      : 'var(--ds-bg-elevated)',
+                    border: isMine
+                      ? '1px solid var(--ds-accent-border)'
+                      : '1px solid var(--ds-border-base)',
+                    lineHeight: 1,
+                  }}
+                >
+                  {emoji}
+                  <span
+                    className="text-[10px] tabular-nums"
+                    style={{ color: 'var(--ds-text-secondary)' }}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Timestamp + delivery state */}
-        <div
-          className={`flex items-center gap-1 px-0.5 ${isOutgoing ? 'flex-row-reverse' : ''}`}
-        >
+        <div className={`flex items-center gap-1 px-0.5 ${isOutgoing ? 'flex-row-reverse' : ''}`}>
           <time
             className="text-[10px]"
             style={{ color: 'var(--ds-text-tertiary)' }}

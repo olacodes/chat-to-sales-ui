@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import type { Message } from '@/store';
 
 interface ChatInputProps {
   onSend: (content: string) => void;
@@ -9,6 +10,10 @@ interface ChatInputProps {
   quickReplies?: string[];
   /** Show spinner on send button while message is in-flight. */
   isSending?: boolean;
+  /** When set, shows a reply-to preview bar above the input. */
+  replyTo?: Message | null;
+  /** Called when the user dismisses the reply-to bar. */
+  onCancelReply?: () => void;
 }
 
 export function ChatInput({
@@ -16,6 +21,8 @@ export function ChatInput({
   disabled = false,
   quickReplies,
   isSending = false,
+  replyTo,
+  onCancelReply,
 }: Readonly<ChatInputProps>) {
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
@@ -25,11 +32,25 @@ export function ChatInput({
   const isDisabled = disabled || isSending;
   const canSend = value.trim().length > 0 && !isDisabled;
 
+  // Auto-focus the textarea when a reply is set
+  useEffect(() => {
+    if (replyTo) textareaRef.current?.focus();
+  }, [replyTo]);
+
   function submit() {
     const trimmed = value.trim();
     if (!trimmed || isDisabled) return;
-    onSend(trimmed);
+
+    let content = trimmed;
+    if (replyTo) {
+      const senderLabel = replyTo.role === 'user' ? 'Customer' : 'Agent';
+      const raw = replyTo.content;
+      const excerpt = raw.length > 80 ? `${raw.slice(0, 80)}…` : raw;
+      content = `> ${senderLabel}: ${excerpt}\n\n${trimmed}`;
+    }
+    onSend(content);
     setValue('');
+    onCancelReply?.();
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }
 
@@ -55,6 +76,37 @@ export function ChatInput({
         backgroundColor: 'var(--ds-bg-surface)',
       }}
     >
+      {/* Reply-to preview bar */}
+      {replyTo && (
+        <div
+          className="flex items-center gap-2 rounded-lg px-3 py-2 mb-2"
+          style={{
+            backgroundColor: 'var(--ds-bg-sunken)',
+            borderLeft: '3px solid var(--ds-brand-bg)',
+          }}
+        >
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-[10px] font-semibold mb-0.5"
+              style={{ color: 'var(--ds-brand-text)' }}
+            >
+              {replyTo.role === 'user' ? 'Customer' : 'Agent'}
+            </p>
+            <p className="text-xs truncate" style={{ color: 'var(--ds-text-secondary)' }}>
+              {replyTo.content}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Cancel reply"
+            onClick={onCancelReply}
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-base transition-opacity hover:opacity-70"
+            style={{ color: 'var(--ds-text-tertiary)' }}
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* Quick reply chips */}
       {quickReplies && quickReplies.length > 0 && (
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-2 mb-2">

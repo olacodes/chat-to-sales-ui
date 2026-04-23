@@ -111,6 +111,22 @@ export interface ConversationAssignedPayload {
   assigned_by_user_id: string | null;
 }
 
+// ─── message.reaction_updated ────────────────────────────────────────────────
+
+export interface ReactionUpdatedItem {
+  id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+export interface MessageReactionUpdatedPayload {
+  conversation_id: string;
+  message_id: string;
+  /** Full canonical list of reactions after the update. */
+  reactions: ReactionUpdatedItem[];
+}
+
 // ─── Discriminated union ──────────────────────────────────────────────────────
 
 export type RealtimeEventType =
@@ -122,7 +138,8 @@ export type RealtimeEventType =
   | 'conversation.started'
   | 'conversation.updated'
   | 'conversation.closed'
-  | 'conversation.assigned';
+  | 'conversation.assigned'
+  | 'message.reaction_updated';
 
 export type RealtimeEventPayload =
   | { type: 'message.received'; payload: MessageReceivedPayload }
@@ -132,4 +149,5 @@ export type RealtimeEventPayload =
   | { type: 'conversation.started'; payload: ConversationCreatedPayload }
   | { type: 'conversation.updated'; payload: ConversationUpdatedPayload }
   | { type: 'conversation.closed'; payload: ConversationUpdatedPayload }
-  | { type: 'conversation.assigned'; payload: ConversationAssignedPayload };
+  | { type: 'conversation.assigned'; payload: ConversationAssignedPayload }
+  | { type: 'message.reaction_updated'; payload: MessageReactionUpdatedPayload };

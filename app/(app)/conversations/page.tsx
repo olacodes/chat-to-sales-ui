@@ -13,6 +13,7 @@ import { ApiError } from '@/lib/api/client';
 import {
   useConversations,
   useMessages,
+  useReactToMessage,
   useSendMessage,
   useStaff,
   useAssignConversation,
@@ -180,6 +181,7 @@ export default function ConversationsPage() {
   const activeConversationId = useAppStore((s) => s.activeConversationId);
   const setActiveConversation = useAppStore((s) => s.setActiveConversation);
   const updateConversation = useAppStore((s) => s.updateConversation);
+  const resetUnread = useAppStore((s) => s.resetUnread);
   const orders = useAppStore((s) => s.orders);
   const currentUser = useAuthStore((s) => s.user);
   const currentUserId = currentUser?.user_id ?? null;
@@ -209,6 +211,7 @@ export default function ConversationsPage() {
   const messages = messagesData?.pages.flatMap((p) => p.items) ?? [];
 
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
+  const { mutate: reactToMessage } = useReactToMessage();
 
   // ── Realtime ───────────────────────────────────────────────────────────────
   const { status, lastActivity, clearActivity } = useConversationsRealtime();
@@ -231,6 +234,11 @@ export default function ConversationsPage() {
     updateConversation(conversationId, { status: 'resolved' });
   }
 
+  function handleReact(conversationId: string, messageId: string, emoji: string) {
+    if (!currentUserId) return;
+    reactToMessage({ conversationId, messageId, emoji, userId: currentUserId });
+  }
+
   function handleAssign(
     conversationId: string,
     userId: string | null,
@@ -246,6 +254,7 @@ export default function ConversationsPage() {
 
   function handleSelectConversation(id: string) {
     setActiveConversation(id);
+    resetUnread(id);
   }
 
   function handleBack() {
@@ -292,6 +301,7 @@ export default function ConversationsPage() {
             currentUserId={currentUserId}
             onAssign={handleAssign}
             isAssigning={isAssigning}
+            onReact={handleReact}
           />
         ) : (
           <InboundMessageForm />

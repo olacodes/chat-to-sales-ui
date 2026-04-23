@@ -35,8 +35,14 @@ interface ChatWindowProps {
   /** The currently authenticated user's ID */
   currentUserId?: string | null;
   /** Called when a staff member is selected (or null to unassign) */
-  onAssign?: (conversationId: string, userId: string | null, staffMember: StaffMember | null) => void;
+  onAssign?: (
+    conversationId: string,
+    userId: string | null,
+    staffMember: StaffMember | null,
+  ) => void;
   isAssigning?: boolean;
+  /** Called when the user picks an emoji reaction on a message. */
+  onReact?: (conversationId: string, messageId: string, emoji: string) => void;
 }
 
 const statusBadge: Record<Conversation['status'], React.ReactElement> = {
@@ -129,11 +135,13 @@ export function ChatWindow({
   currentUserId,
   onAssign,
   isAssigning = false,
+  onReact,
 }: Readonly<ChatWindowProps>) {
   const { id, customerName, customerIdentifier, status, assignedTo } = conversation;
   const messages = messagesProp ?? conversation.messages;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [orderCollapsed, setOrderCollapsed] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -164,6 +172,13 @@ export function ChatWindow({
           message={msg}
           customerName={customerName}
           isGrouped={isGrouped}
+          onReply={setReplyTo}
+          currentUserId={currentUserId}
+          onReact={
+            onReact
+              ? (emoji) => onReact(id, msg.id, emoji)
+              : undefined
+          }
         />
       );
     });
@@ -359,6 +374,8 @@ export function ChatWindow({
         onSend={(content) => onSendMessage(id, content)}
         disabled={status === 'resolved'}
         isSending={isSending}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
       />
     </div>
   );

@@ -25,8 +25,8 @@ import { conversationsApi } from '@/lib/api/endpoints/conversations';
 import { staffApi } from '@/lib/api/endpoints/staff';
 import { notificationsApi } from '@/lib/api/endpoints/notifications';
 import { getTenantId } from '@/lib/auth/tokenStore';
-import type { PagedOut } from '@/lib/api/types';
-import type { Conversation, Message, StaffMember } from '@/store';
+import type { AddReactionPayload, PagedOut } from '@/lib/api/types';
+import type { Conversation, Message, Reaction, StaffMember } from '@/store';
 import type { AddMessagePayload } from '@/lib/api/types';
 
 // ─── Query key factory ────────────────────────────────────────────────────────
@@ -173,6 +173,7 @@ export function useSendMessage() {
         senderIdentifier: null,
         content: payload.content,
         timestamp: new Date().toISOString(),
+        reactions: [],
       };
 
       // Append to the last page (or create a seed page if cache is empty)
@@ -333,6 +334,107 @@ export function useAssignConversation() {
     onSettled: (_data, _error, { conversationId }) => {
       queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: conversationKeys.detail(conversationId) });
+    },
+  });
+}
+
+// ─── useReactToMessage ────────────────────────────────────────────────────────
+
+interface ReactToMessageVariables {
+  conversationId: string;
+  messageId: string;
+  emoji: string;
+  userId: string;
+}
+
+/**
+ * Toggle an emoji reaction on a message with an optimistic update.
+ *
+ * Immediately patches the RQ messages cache so the UI feels instant.
+ * On success, the optimistic reaction is replaced with the server's
+ * canonical reaction list. On error the optimistic patch is rolled back.
+ *
+ * Toggle semantics (same as the backend):
+ *   - Same emoji already set  → removes it
+ *   - Different emoji already set → replaces it
+ *   - No reaction yet → adds it
+ */
+export function useReactToMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Message, Error, ReactToMessageVariables>({
+    mutationFn: ({ conversationId, messageId, emoji, userId }: ReactToMessageVariables) =>
+      conversationsApi.addReaction(conversationId, messageId, { emoji, user_id: userId } as AddReactionPayload),
+
+    onMutate: async ({ conversationId, messageId, emoji, userId }: ReactToMessageVariables) => {
+      const messagesKey = conversationKeys.messages(conversationId);
+      await queryClient.cancelQueries({ queryKey: messagesKey });
+
+      const previousMessages =
+        queryClient.getQueryData<InfiniteData<PagedOut<Message>>>(messagesKey);
+
+      queryClient.setQueryData<InfiniteData<PagedOut<Message>>>(messagesKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((msg) => {
+              if (msg.id !== messageId) return msg;
+
+              const existing = msg.reactions.find((r) => r.userId === userId);
+              let newReactions: Reaction[];
+
+              if (existing?.emoji === emoji) {
+                // Toggle off — remove this user's reaction
+                newReactions = msg.reactions.filter((r) => r.userId !== userId);
+              } else {
+                // Add or replace — remove old then append new
+                const optimisticReaction: Reaction = {
+                  id: `optimistic-${Date.now()}`,
+                  userId,
+                  emoji,
+                  createdAt: new Date().toISOString(),
+                };
+                newReactions = [
+                  ...msg.reactions.filter((r) => r.userId !== userId),
+                  optimisticReaction,
+                ];
+              }
+
+              return { ...msg, reactions: newReactions };
+            }),
+          })),
+        };
+      });
+
+      return { previousMessages };
+    },
+
+    onError: (_error, { conversationId }, context) => {
+      const messagesKey = conversationKeys.messages(conversationId);
+      const ctx = context as { previousMessages?: InfiniteData<PagedOut<Message>> } | undefined;
+      if (ctx?.previousMessages !== undefined) {
+        queryClient.setQueryData(messagesKey, ctx.previousMessages);
+      }
+      console.error('[useReactToMessage] failed:', _error.message);
+    },
+
+    onSuccess: (updatedMessage, { conversationId }) => {
+      // Replace the optimistic reactions with the server's canonical list
+      const messagesKey = conversationKeys.messages(conversationId);
+      queryClient.setQueryData<InfiniteData<PagedOut<Message>>>(messagesKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((msg) =>
+              msg.id === updatedMessage.id ? updatedMessage : msg,
+            ),
+          })),
+        };
+      });
     },
   });
 }
