@@ -84,3 +84,22 @@ export function logout(): void {
   eraseSession();
   useAuthStore.getState().clearSession();
 }
+
+/**
+ * Apply a session from the invite-acceptance endpoint, which returns a flat
+ * { access_token, user_id, tenant_id, email } shape instead of the standard
+ * AuthResponse shape used by login/signup.
+ */
+export function applyInviteSession(data: {
+  access_token: string;
+  user_id: string;
+  tenant_id: string;
+  email: string;
+}): AuthSession {
+  return applySession({
+    access_token: data.access_token,
+    token_type: 'bearer',
+    user: { user_id: data.user_id, email: data.email },
+    tenant_id: data.tenant_id,
+  });
+}

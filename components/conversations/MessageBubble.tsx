@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Message, MessageRole } from '@/store';
 import { formatMessageTime, getInitials } from './utils';
 
@@ -18,7 +19,7 @@ function parseReplyContent(content: string): ParsedReply | null {
   // Pattern: "> Sender: quoted text\n\nreply text"
   // The quoted text itself may span multiple lines via the excerpt, but the
   // double newline is the delimiter between quote and reply.
-  const match = content.match(/^> ([^:]+): ([\s\S]+?)\n\n([\s\S]+)$/);
+  const match = /^> ([^:]+): ([\s\S]+?)\n\n([\s\S]+)$/.exec(content);
   if (!match) return null;
   return {
     quotedSender: match[1].trim(),
@@ -32,32 +33,47 @@ function parseReplyContent(content: string): ParsedReply | null {
 const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '😅', '🔥'];
 
 interface EmojiPickerProps {
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
   onSelect: (emoji: string) => void;
   onClose: () => void;
   isOutgoing: boolean;
 }
 
-function EmojiPicker({ onSelect, onClose, isOutgoing }: Readonly<EmojiPickerProps>) {
+function EmojiPicker({ anchorRef, onSelect, onClose, isOutgoing }: Readonly<EmojiPickerProps>) {
   const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<React.CSSProperties>({ visibility: 'hidden' });
+
+  useLayoutEffect(() => {
+    if (!anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    const PICKER_H = 52;
+    const PICKER_W = 320;
+    // Open above the button; flip below if it would be cut off by the top
+    const top = rect.top > PICKER_H + 12 ? rect.top - PICKER_H - 8 : rect.bottom + 8;
+    // Align to the bubble's side, clamped within the viewport
+    const rawLeft = isOutgoing ? rect.right - PICKER_W : rect.left;
+    const left = Math.max(8, Math.min(rawLeft, window.innerWidth - PICKER_W - 8));
+    setPos({ position: 'fixed', top, left, visibility: 'visible' });
+  }, [anchorRef, isOutgoing]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose();
-      }
+      const target = e.target as Node;
+      const outsidePicker = ref.current && !ref.current.contains(target);
+      const outsideAnchor = anchorRef.current && !anchorRef.current.contains(target);
+      if (outsidePicker && outsideAnchor) onClose();
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
+  }, [onClose, anchorRef]);
 
-  return (
+  return createPortal(
     <div
       ref={ref}
       aria-label="Emoji reactions"
-      className={`absolute bottom-full mb-1.5 z-20 flex items-center gap-1 rounded-full px-2 py-1.5 shadow-lg ${
-        isOutgoing ? 'right-0' : 'left-0'
-      }`}
+      className="z-[9999] flex items-center gap-1 rounded-full px-2 py-1.5"
       style={{
+        ...pos,
         backgroundColor: 'var(--ds-bg-elevated)',
         border: '1px solid var(--ds-border-base)',
         boxShadow: 'var(--ds-shadow-md)',
@@ -78,7 +94,8 @@ function EmojiPicker({ onSelect, onClose, isOutgoing }: Readonly<EmojiPickerProp
           {emoji}
         </button>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -185,6 +202,7 @@ interface BubbleToolbarProps {
   onCopy: () => void;
   onReply: () => void;
   onEmojiClick: () => void;
+  emojiButtonRef: React.RefObject<HTMLButtonElement | null>;
 }
 
 function BubbleToolbar({
@@ -192,6 +210,7 @@ function BubbleToolbar({
   onCopy,
   onReply,
   onEmojiClick,
+  emojiButtonRef,
 }: Readonly<BubbleToolbarProps>) {
   // Toolbar appears on the opposite side of the bubble alignment
   const sideClass = isOutgoing ? 'order-first mr-1' : 'order-last ml-1';
@@ -200,9 +219,23 @@ function BubbleToolbar({
     <div
       className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100 shrink-0 ${sideClass}`}
     >
-      <ToolbarButton label="React" onClick={onEmojiClick}>
+      <button
+        ref={emojiButtonRef}
+        type="button"
+        aria-label="React"
+        onClick={onEmojiClick}
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-xs transition-colors duration-100"
+        style={{
+          backgroundColor: 'var(--ds-bg-elevated)',
+          color: 'var(--ds-text-secondary)',
+          boxShadow: 'var(--ds-shadow-sm)',
+          border: '1px solid var(--ds-border-base)',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
+      >
         😊
-      </ToolbarButton>
+      </button>
       <ToolbarButton label="Reply" onClick={onReply}>
         <svg
           className="h-3.5 w-3.5"
@@ -256,6 +289,7 @@ export function MessageBubble({
   currentUserId,
 }: Readonly<MessageBubbleProps>) {
   const { role, content, timestamp, reactions } = message;
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // assistant = outgoing (right-aligned, brand green)
@@ -315,15 +349,17 @@ export function MessageBubble({
         onCopy={handleCopy}
         onReply={handleReply}
         onEmojiClick={() => setPickerOpen((prev) => !prev)}
+        emojiButtonRef={emojiButtonRef}
       />
 
       {/* Bubble + meta column */}
       <div
         className={`relative flex max-w-[72%] flex-col gap-1 ${isOutgoing ? 'items-end' : 'items-start'}`}
       >
-        {/* Emoji picker popover */}
+        {/* Emoji picker portal — rendered via fixed positioning to escape overflow clipping */}
         {pickerOpen && (
           <EmojiPicker
+            anchorRef={emojiButtonRef}
             isOutgoing={isOutgoing}
             onSelect={(emoji) => {
               onReact?.(emoji);
@@ -355,15 +391,9 @@ export function MessageBubble({
 
           if (parsed) {
             // WhatsApp-style: quoted block on top, reply text below
-            const quoteBarColor = isOutgoing
-              ? 'rgba(255,255,255,0.5)'
-              : 'var(--ds-brand-bg)';
-            const quoteBgColor = isOutgoing
-              ? 'rgba(0,0,0,0.1)'
-              : 'var(--ds-bg-sunken)';
-            const quoteSenderColor = isOutgoing
-              ? 'rgba(255,255,255,0.9)'
-              : 'var(--ds-brand-text)';
+            const quoteBarColor = isOutgoing ? 'rgba(255,255,255,0.5)' : 'var(--ds-brand-bg)';
+            const quoteBgColor = isOutgoing ? 'rgba(0,0,0,0.1)' : 'var(--ds-bg-sunken)';
+            const quoteSenderColor = isOutgoing ? 'rgba(255,255,255,0.9)' : 'var(--ds-brand-text)';
             const quoteTextColor = isOutgoing
               ? 'rgba(255,255,255,0.75)'
               : 'var(--ds-text-secondary)';
@@ -427,9 +457,7 @@ export function MessageBubble({
                 return acc;
               }, new Map<string, number>()),
             ).map(([emoji, count]) => {
-              const isMine = reactions.some(
-                (r) => r.emoji === emoji && r.userId === currentUserId,
-              );
+              const isMine = reactions.some((r) => r.emoji === emoji && r.userId === currentUserId);
               return (
                 <button
                   key={emoji}
@@ -438,9 +466,7 @@ export function MessageBubble({
                   onClick={() => onReact?.(emoji)}
                   className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-sm transition-opacity hover:opacity-70"
                   style={{
-                    backgroundColor: isMine
-                      ? 'var(--ds-accent-bg-soft)'
-                      : 'var(--ds-bg-elevated)',
+                    backgroundColor: isMine ? 'var(--ds-accent-bg-soft)' : 'var(--ds-bg-elevated)',
                     border: isMine
                       ? '1px solid var(--ds-accent-border)'
                       : '1px solid var(--ds-border-base)',

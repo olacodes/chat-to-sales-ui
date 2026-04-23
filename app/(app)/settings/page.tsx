@@ -1,6 +1,8 @@
 'use client';
 
 import { WeeklyReportCard } from '@/components/reports/WeeklyReportCard';
+import { TeamSection } from '@/components/settings/TeamSection';
+import { ChannelsSection } from '@/components/settings/ChannelsSection';
 
 export default function SettingsPage() {
   return (
@@ -15,8 +17,30 @@ export default function SettingsPage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--ds-text-tertiary)' }}>
+        <h2
+          className="text-xs font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--ds-text-tertiary)' }}
+        >
+          Channels
+        </h2>
+        <ChannelsSection />
+      </section>
+
+      <section className="space-y-3">
+        <h2
+          className="text-xs font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--ds-text-tertiary)' }}
+        >
+          Team
+        </h2>
+        <TeamSection />
+      </section>
+
+      <section className="space-y-3">
+        <h2
+          className="text-xs font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--ds-text-tertiary)' }}
+        >
           Notifications
         </h2>
         <WeeklyReportCard />
