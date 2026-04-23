@@ -22,11 +22,12 @@ import {
   type QueryKey,
 } from '@tanstack/react-query';
 import { conversationsApi } from '@/lib/api/endpoints/conversations';
+import { scheduledMessagesApi } from '@/lib/api/endpoints/scheduled-messages';
 import { staffApi } from '@/lib/api/endpoints/staff';
 import { notificationsApi } from '@/lib/api/endpoints/notifications';
 import { getTenantId } from '@/lib/auth/tokenStore';
-import type { AddReactionPayload, PagedOut } from '@/lib/api/types';
-import type { Conversation, Message, Reaction, StaffMember } from '@/store';
+import type { AddReactionPayload, PagedOut, ScheduleMessagePayload } from '@/lib/api/types';
+import type { Conversation, Message, Reaction, ScheduledMessage, StaffMember } from '@/store';
 import type { AddMessagePayload } from '@/lib/api/types';
 
 // ─── Query key factory ────────────────────────────────────────────────────────
@@ -434,6 +435,157 @@ export function useReactToMessage() {
             ),
           })),
         };
+      });
+    },
+  });
+}
+
+// ─── useSnoozeConversation ────────────────────────────────────────────────────
+
+interface SnoozeVariables {
+  conversationId: string;
+  /** ISO timestamp to snooze until, or null to clear */
+  snoozedUntil: string | null;
+}
+
+/**
+ * Snooze or unsnooze a conversation.
+ *
+ * When snoozedUntil is set the conversation is removed optimistically from
+ * the list. When null it is cleared (un-snoozed). Invalidates the list on settle.
+ */
+export function useSnoozeConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Conversation, Error, SnoozeVariables>({
+    mutationFn: ({ conversationId, snoozedUntil }) =>
+      conversationsApi.snooze(conversationId, snoozedUntil),
+
+    onMutate: async ({ conversationId, snoozedUntil }) => {
+      await queryClient.cancelQueries({ queryKey: conversationKeys.lists() });
+
+      const previousLists = queryClient.getQueriesData<InfiniteData<PagedOut<Conversation>>>({
+        queryKey: conversationKeys.lists(),
+      });
+
+      // Patch snoozedUntil on the item in-place — conversation stays visible in the list
+      queryClient.setQueriesData<InfiniteData<PagedOut<Conversation>>>(
+        { queryKey: conversationKeys.lists() },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((c) =>
+                c.id === conversationId ? { ...c, snoozedUntil } : c,
+              ),
+            })),
+          };
+        },
+      );
+
+      return { previousLists };
+    },
+
+    onError: (_err, _vars, context) => {
+      const ctx = context as {
+        previousLists?: [QueryKey, InfiniteData<PagedOut<Conversation>> | undefined][];
+      } | undefined;
+      if (ctx?.previousLists) {
+        for (const [key, data] of ctx.previousLists) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
+    },
+  });
+}
+
+// ─── Scheduled message query keys ─────────────────────────────────────────────
+
+export const scheduledMessageKeys = {
+  all: ['scheduledMessages'] as const,
+  list: (conversationId: string) => [...scheduledMessageKeys.all, conversationId] as const,
+};
+
+// ─── useScheduledMessages ─────────────────────────────────────────────────────
+
+/** Fetch pending scheduled messages for a conversation. */
+export function useScheduledMessages(conversationId: string | null | undefined) {
+  return useQuery<ScheduledMessage[], Error>({
+    queryKey: scheduledMessageKeys.list(conversationId ?? ''),
+    queryFn: ({ signal }) => scheduledMessagesApi.list(conversationId!, signal),
+    enabled: Boolean(conversationId),
+    staleTime: 15_000,
+  });
+}
+
+// ─── useCreateScheduledMessage ────────────────────────────────────────────────
+
+interface CreateScheduledVariables {
+  conversationId: string;
+  payload: ScheduleMessagePayload;
+}
+
+/** Schedule a message to be sent at a future time. */
+export function useCreateScheduledMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ScheduledMessage, Error, CreateScheduledVariables>({
+    mutationFn: ({ conversationId, payload }) =>
+      scheduledMessagesApi.create(conversationId, payload),
+
+    onSuccess: (_data, { conversationId }) => {
+      queryClient.invalidateQueries({
+        queryKey: scheduledMessageKeys.list(conversationId),
+      });
+    },
+  });
+}
+
+// ─── useCancelScheduledMessage ────────────────────────────────────────────────
+
+interface CancelScheduledVariables {
+  conversationId: string;
+  scheduledMessageId: string;
+}
+
+/** Cancel a pending scheduled message with optimistic removal. */
+export function useCancelScheduledMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, CancelScheduledVariables>({
+    mutationFn: ({ conversationId, scheduledMessageId }) =>
+      scheduledMessagesApi.cancel(conversationId, scheduledMessageId),
+
+    onMutate: async ({ conversationId, scheduledMessageId }) => {
+      await queryClient.cancelQueries({
+        queryKey: scheduledMessageKeys.list(conversationId),
+      });
+      const previous = queryClient.getQueryData<ScheduledMessage[]>(
+        scheduledMessageKeys.list(conversationId),
+      );
+      queryClient.setQueryData<ScheduledMessage[]>(
+        scheduledMessageKeys.list(conversationId),
+        (old) => old?.filter((m) => m.id !== scheduledMessageId) ?? [],
+      );
+      return { previous };
+    },
+
+    onError: (_err, { conversationId }, context) => {
+      const ctx = context as { previous?: ScheduledMessage[] } | undefined;
+      if (ctx?.previous) {
+        queryClient.setQueryData(scheduledMessageKeys.list(conversationId), ctx.previous);
+      }
+    },
+
+    onSettled: (_data, _err, { conversationId }) => {
+      queryClient.invalidateQueries({
+        queryKey: scheduledMessageKeys.list(conversationId),
       });
     },
   });

@@ -32,18 +32,35 @@ function getTitle(pathname: string): string {
   return 'ChatToSales';
 }
 
-/** Format the raw tenantId into a human-readable name. */
-function formatTenantName(tenantId: string): string {
-  return tenantId
+const GENERIC_MAIL_DOMAINS = new Set([
+  'gmail.com', 'googlemail.com',
+  'yahoo.com', 'yahoo.co.uk', 'yahoo.fr', 'yahoo.de', 'yahoo.es',
+  'hotmail.com', 'hotmail.co.uk', 'hotmail.fr', 'hotmail.de',
+  'outlook.com', 'outlook.co.uk', 'live.com', 'msn.com',
+  'icloud.com', 'me.com', 'mac.com',
+  'aol.com', 'protonmail.com', 'proton.me',
+  'zoho.com', 'mail.com', 'yandex.com', 'gmx.com',
+]);
+
+/** Derive a business display name from an email address.
+ * - Custom domain:  alice@acme-corp.com  →  "Acme Corp"
+ * - Generic mailer: bob@gmail.com        →  "Bob"
+ */
+function businessNameFromEmail(email: string): string {
+  const [prefix = '', domain = ''] = email.split('@');
+  const raw = GENERIC_MAIL_DOMAINS.has(domain.toLowerCase()) ? prefix : (domain.split('.')[0] ?? prefix);
+  return raw
     .replaceAll('-', ' ')
     .replaceAll('_', ' ')
+    .replaceAll('.', ' ')
     .replaceAll(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /* ── Tenant Switcher ─────────────────────────────────────────── */
 
-function TenantSwitcher({ tenantId }: Readonly<{ tenantId: string }>) {
-  const name = formatTenantName(tenantId);
+function TenantSwitcher() {
+  const email = useAuthStore((s) => s.user?.email ?? '');
+  const name = businessNameFromEmail(email) || 'My Workspace';
 
   return (
     <button
@@ -247,7 +264,6 @@ export function Topbar({ onMenuClick }: Readonly<TopbarProps>) {
   const title = getTitle(pathname);
   const wsStatus = useWsStatus();
   const { label, color, pulse } = statusConfig[wsStatus];
-  const tenantId = useAuthStore((s) => s.tenantId) ?? '';
 
   return (
     <header
@@ -281,7 +297,7 @@ export function Topbar({ onMenuClick }: Readonly<TopbarProps>) {
         </button>
 
         {/* Tenant switcher */}
-        <TenantSwitcher tenantId={tenantId} />
+        <TenantSwitcher />
 
         {/* Divider — only between tenant and title */}
         <div

@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Conversation, Message, Order, StaffMember } from '@/store';
+import type { Conversation, Message, Order, ScheduledMessage, StaffMember } from '@/store';
 import type { ConnectionStatus } from '@/lib/websocket/client';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { InlineOrderCard } from './InlineOrderCard';
 import { AssignmentPanel } from './AssignmentPanel';
 import { Badge } from '@/components/ui/Badge';
+import { SnoozePopover } from './SnoozePopover';
+import { formatScheduledTime } from '@/lib/utils/snoozePresets';
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -43,6 +45,14 @@ interface ChatWindowProps {
   isAssigning?: boolean;
   /** Called when the user picks an emoji reaction on a message. */
   onReact?: (conversationId: string, messageId: string, emoji: string) => void;
+  /** Called when the user picks a snooze preset from the header. */
+  onSnooze?: (conversationId: string, isoString: string) => void;
+  /** Pending scheduled messages for this conversation. */
+  scheduledMessages?: ScheduledMessage[];
+  /** Called when the user cancels a scheduled message. */
+  onCancelScheduledMessage?: (conversationId: string, scheduledMessageId: string) => void;
+  /** Called when the user schedules a message from the input. */
+  onScheduleMessage?: (conversationId: string, content: string, scheduledFor: string) => void;
 }
 
 const statusBadge: Record<Conversation['status'], React.ReactElement> = {
@@ -136,12 +146,17 @@ export function ChatWindow({
   onAssign,
   isAssigning = false,
   onReact,
+  onSnooze,
+  scheduledMessages = [],
+  onCancelScheduledMessage,
+  onScheduleMessage,
 }: Readonly<ChatWindowProps>) {
   const { id, customerName, customerIdentifier, status, assignedTo } = conversation;
   const messages = messagesProp ?? conversation.messages;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [orderCollapsed, setOrderCollapsed] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [snoozeOpen, setSnoozeOpen] = useState(false);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -266,6 +281,35 @@ export function ChatWindow({
             />
           )}
 
+          {status !== 'resolved' && onSnooze && (
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Snooze conversation"
+                onClick={() => setSnoozeOpen((o) => !o)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                style={{
+                  color: conversation.snoozedUntil ? 'var(--ds-warning-text)' : 'var(--ds-text-secondary)',
+                  border: '1px solid var(--ds-border-base)',
+                  backgroundColor: conversation.snoozedUntil ? 'var(--ds-warning-bg)' : 'transparent',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = conversation.snoozedUntil ? 'var(--ds-warning-bg)' : ''; }}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
+                </svg>
+              </button>
+              {snoozeOpen && (
+                <SnoozePopover
+                  direction="down"
+                  onSelect={(iso) => { onSnooze(id, iso); setSnoozeOpen(false); }}
+                  onClose={() => setSnoozeOpen(false)}
+                />
+              )}
+            </div>
+          )}
+
           {status !== 'resolved' && onMarkResolved && (
             <button
               type="button"
@@ -355,6 +399,45 @@ export function ChatWindow({
         {/* Messages */}
         {renderMessages()}
 
+        {/* Scheduled message bubbles */}
+        {scheduledMessages.map((sm) => (
+          <div key={sm.id} className="flex justify-end">
+            <div
+              className="relative max-w-[75%] rounded-2xl rounded-br-sm px-4 py-2.5"
+              style={{
+                backgroundColor: 'var(--ds-bg-elevated)',
+                border: '1px dashed var(--ds-border-base)',
+              }}
+            >
+              <p className="text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
+                {sm.content}
+              </p>
+              <div className="flex items-center justify-between gap-3 mt-1">
+                <span
+                  className="flex items-center gap-1 text-[10px]"
+                  style={{ color: 'var(--ds-text-tertiary)' }}
+                >
+                  <svg className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
+                  </svg>
+                  Sends {formatScheduledTime(sm.scheduledFor)}
+                </span>
+                {onCancelScheduledMessage && (
+                  <button
+                    type="button"
+                    aria-label="Cancel scheduled message"
+                    onClick={() => onCancelScheduledMessage(id, sm.id)}
+                    className="text-[10px] font-medium transition-opacity hover:opacity-70"
+                    style={{ color: 'var(--ds-danger-text)' }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
@@ -376,6 +459,7 @@ export function ChatWindow({
         isSending={isSending}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
+        onSchedule={onScheduleMessage ? (content, scheduledFor) => onScheduleMessage(id, content, scheduledFor) : undefined}
       />
     </div>
   );

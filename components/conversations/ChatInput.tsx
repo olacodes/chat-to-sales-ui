@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { Message } from '@/store';
+import { SnoozePopover } from './SnoozePopover';
 
 interface ChatInputProps {
   onSend: (content: string) => void;
@@ -14,6 +15,8 @@ interface ChatInputProps {
   replyTo?: Message | null;
   /** Called when the user dismisses the reply-to bar. */
   onCancelReply?: () => void;
+  /** Called when user picks a schedule preset. Only shown when text is present. */
+  onSchedule?: (content: string, scheduledFor: string) => void;
 }
 
 export function ChatInput({
@@ -23,9 +26,11 @@ export function ChatInput({
   isSending = false,
   replyTo,
   onCancelReply,
+  onSchedule,
 }: Readonly<ChatInputProps>) {
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -215,6 +220,38 @@ export function ChatInput({
             maxHeight: '120px',
           }}
         />
+
+        {/* Schedule button — only visible when there is text and onSchedule is provided */}
+        {onSchedule && (
+          <div className="relative mb-0.5">
+            <button
+              type="button"
+              aria-label="Schedule message"
+              disabled={!canSend}
+              onClick={() => setScheduleOpen((o) => !o)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ color: 'var(--ds-text-tertiary)' }}
+              onMouseEnter={(e) => { if (canSend) e.currentTarget.style.color = 'var(--ds-text-secondary)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds-text-tertiary)'; }}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+                <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
+              </svg>
+            </button>
+            {scheduleOpen && canSend && (
+              <SnoozePopover
+                direction="up"
+                onSelect={(iso) => {
+                  onSchedule(value.trim(), iso);
+                  setValue('');
+                  setScheduleOpen(false);
+                  if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                }}
+                onClose={() => setScheduleOpen(false)}
+              />
+            )}
+          </div>
+        )}
 
         {/* Send button */}
         <button

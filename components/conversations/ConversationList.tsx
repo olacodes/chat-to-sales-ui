@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store';
 import type { Conversation } from '@/store';
 import { ConversationListItem } from './ConversationListItem';
+import { SnoozePopover } from './SnoozePopover';
 
 export type ConversationTab = 'unassigned' | 'mine' | 'all';
 
@@ -21,6 +22,7 @@ interface ConversationListProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
+  onSnooze?: (conversationId: string, isoString: string) => void;
 }
 
 const SKELETON_IDS = ['sk-1', 'sk-2', 'sk-3', 'sk-4'] as const;
@@ -41,9 +43,11 @@ export function ConversationList({
   hasNextPage = false,
   isFetchingNextPage = false,
   onLoadMore,
+  onSnooze,
 }: Readonly<ConversationListProps>) {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ConversationTab>('unassigned');
+  const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
 
   // Unread counts live in Zustand so React Query refetches never reset them
   const unreadCounts = useAppStore((s) => s.unreadCounts);
@@ -71,12 +75,70 @@ export function ConversationList({
       )
     : tabFiltered;
 
-  // Sort by most recent activity DESC
-  const sorted = [...filtered].sort((a, b) => {
-    const ta = a.lastMessageAt ?? '';
-    const tb = b.lastMessageAt ?? '';
-    return tb.localeCompare(ta);
-  });
+  const now = new Date();
+
+  // Split into active and snoozed, each sorted independently
+  const active = [...filtered]
+    .filter((c) => !c.snoozedUntil || new Date(c.snoozedUntil) <= now)
+    .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''));
+
+  const snoozed = [...filtered]
+    .filter((c) => c.snoozedUntil && new Date(c.snoozedUntil) > now)
+    .sort((a, b) => (a.snoozedUntil ?? '').localeCompare(b.snoozedUntil ?? '')); // earliest resurface first
+
+  function renderItem(conv: Conversation, muted: boolean) {
+    return (
+      <li
+        key={conv.id}
+        className="relative group"
+        style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}
+      >
+        <ConversationListItem
+          conversation={{ ...conv, unreadCount: unreadCounts[conv.id] ?? 0 }}
+          isActive={conv.id === activeId}
+          onClick={() => onSelect(conv.id)}
+          muted={muted}
+        />
+        {onSnooze && (
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              aria-label="Snooze conversation"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSnoozeOpenId(snoozeOpenId === conv.id ? null : conv.id);
+              }}
+              className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+              style={{
+                color: 'var(--ds-text-tertiary)',
+                backgroundColor: 'var(--ds-bg-surface)',
+                border: '1px solid var(--ds-border-base)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--ds-text-secondary)';
+                e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--ds-text-tertiary)';
+                e.currentTarget.style.backgroundColor = 'var(--ds-bg-surface)';
+              }}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+                <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
+              </svg>
+            </button>
+            {snoozeOpenId === conv.id && (
+              <SnoozePopover
+                direction="down"
+                onSelect={(iso) => { onSnooze(conv.id, iso); setSnoozeOpenId(null); }}
+                onClose={() => setSnoozeOpenId(null)}
+              />
+            )}
+          </div>
+        )}
+      </li>
+    );
+  }
 
   function renderListContent() {
     if (isLoading && conversations.length === 0) {
@@ -111,7 +173,7 @@ export function ConversationList({
         </>
       );
     }
-    if (sorted.length === 0) {
+    if (active.length === 0 && snoozed.length === 0) {
       return (
         <li className="px-4 py-8 text-center text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
           <EmptyListMessage hasSearch={Boolean(search)} />
@@ -120,15 +182,8 @@ export function ConversationList({
     }
     return (
       <>
-        {sorted.map((conv) => (
-          <li key={conv.id} style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}>
-            <ConversationListItem
-              conversation={{ ...conv, unreadCount: unreadCounts[conv.id] ?? 0 }}
-              isActive={conv.id === activeId}
-              onClick={() => onSelect(conv.id)}
-            />
-          </li>
-        ))}
+        {active.map((conv) => renderItem(conv, false))}
+
         {hasNextPage && (
           <li className="px-4 py-3 text-center">
             <button
@@ -141,6 +196,23 @@ export function ConversationList({
               {isFetchingNextPage ? 'Loading more\u2026' : 'Load more conversations'}
             </button>
           </li>
+        )}
+
+        {snoozed.length > 0 && (
+          <>
+            <li
+              className="px-4 py-1.5 flex items-center gap-2"
+              style={{ borderBottom: '1px solid var(--ds-border-subtle)' }}
+            >
+              <svg className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--ds-text-tertiary)' }} aria-hidden="true">
+                <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3 3" />
+              </svg>
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>
+                Snoozed
+              </span>
+            </li>
+            {snoozed.map((conv) => renderItem(conv, true))}
+          </>
         )}
       </>
     );
