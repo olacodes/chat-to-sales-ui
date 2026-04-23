@@ -18,6 +18,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0001',
         content: 'Hi! I placed an order yesterday. Order #ORD-001.',
         timestamp: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-001-2',
@@ -26,6 +27,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: null,
         content: 'Hello Alice! Let me check that for you right away.',
         timestamp: new Date(Date.now() - 32 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-001-3',
@@ -35,6 +37,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         content:
           'Your order is confirmed and has been dispatched. Estimated delivery is today between 2–5 PM.',
         timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-001-4',
@@ -43,6 +46,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0001',
         content: 'Is my order still on track for delivery today?',
         timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+        reactions: [],
       },
     ],
   },
@@ -63,6 +67,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0002',
         content: 'I want to return my item. It arrived damaged.',
         timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-002-2',
@@ -72,6 +77,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         content:
           "I'm sorry to hear that, Bob. I've raised a return request and a full refund will be processed within 3–5 business days.",
         timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-002-3',
@@ -80,6 +86,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0002',
         content: "Thanks! I'll wait for the refund.",
         timestamp: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+        reactions: [],
       },
     ],
   },
@@ -100,6 +107,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0003',
         content: "Hey, I'm interested in the blue jacket from your latest collection.",
         timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-003-2',
@@ -109,6 +117,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         content:
           'Hi Carol! The blue jacket is available in sizes S, M, L, and XL. Which size are you looking for?',
         timestamp: new Date(Date.now() - 3.5 * 60 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-003-3',
@@ -117,6 +126,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0003',
         content: 'Do you have this in size M?',
         timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        reactions: [],
       },
     ],
   },
@@ -137,6 +147,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0004',
         content: 'My payment failed but I was still charged. Can you help?',
         timestamp: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-004-2',
@@ -146,6 +157,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         content:
           "Hi Dan! I've looked into it — the charge was a pre-auth hold and will be released automatically within 24 hours.",
         timestamp: new Date(Date.now() - 25.5 * 60 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-004-3',
@@ -154,6 +166,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0004',
         content: 'Great service, thank you!',
         timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        reactions: [],
       },
     ],
   },
@@ -174,6 +187,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0005',
         content: "Hello! I'm representing a small business.",
         timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-005-2',
@@ -182,6 +196,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0005',
         content: "We'd like to place a large order.",
         timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+        reactions: [],
       },
       {
         id: 'm-005-3',
@@ -190,6 +205,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
         senderIdentifier: '+1 555 010 0005',
         content: 'Can I get a bulk discount for 10 units?',
         timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        reactions: [],
       },
     ],
   },

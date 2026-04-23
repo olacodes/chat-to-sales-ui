@@ -106,6 +106,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           senderIdentifier: p.sender_identifier ?? null,
           content: p.content,
           timestamp,
+          reactions: [],
         };
 
         // Append to messages infinite query. If the messages cache doesn't

@@ -20,6 +20,7 @@ export type {
   Order,
   OrderItem,
   Payment,
+  Reaction,
   StaffMember,
   ConversationStatus,
   OrderStatus,
