@@ -21,6 +21,7 @@ export type {
   OrderItem,
   Payment,
   Reaction,
+  ScheduledMessage,
   StaffMember,
   ConversationStatus,
   OrderStatus,

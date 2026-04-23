@@ -43,8 +43,7 @@ export interface Conversation {
   lastMessageAt: string | null;
   unreadCount: number;
   messages: Message[];
-  /** ISO timestamp — set when a snooze is due (backend excludes future snoozes from list) */
-  snoozedUntil: string | null;
+  snoozedUntil?: string | null;
 }
 
 export interface ScheduledMessage {
