@@ -58,8 +58,8 @@ function mapConversation(c: ConversationOut): Conversation {
     // Backend uses 'closed'; store uses 'resolved'
     status: c.status === 'closed' ? 'resolved' : c.status,
     assignedTo: c.assigned_to ? mapStaffMember(c.assigned_to) : null,
-    lastMessage: c.messages?.at(-1)?.content ?? null,
-    lastMessageAt: c.messages?.at(-1)?.created_at ?? null,
+    lastMessage: c.last_message?.content ?? c.messages?.at(-1)?.content ?? null,
+    lastMessageAt: c.last_message?.timestamp ?? c.messages?.at(-1)?.created_at ?? null,
     unreadCount: 0,
     messages: (c.messages ?? []).map(mapMessage),
   };

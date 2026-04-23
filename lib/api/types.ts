@@ -58,6 +58,8 @@ export interface ConversationOut {
   updated_at: string;
   /** Included when fetching a specific conversation */
   messages?: MessageOut[];
+  /** Included on list responses in place of the full messages array */
+  last_message?: { content: string; timestamp: string } | null;
 }
 
 export type MessageSenderRole = 'user' | 'assistant' | 'system';
