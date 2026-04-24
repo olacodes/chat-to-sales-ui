@@ -275,7 +275,6 @@ function BubbleToolbar({
 /* ── Avatar initials mapping ─────────────────────────────────── */
 
 const roleInitialsFallback: Partial<Record<MessageRole, string>> = {
-  assistant: 'AI',
   system: 'SY',
 };
 
@@ -303,7 +302,7 @@ export function MessageBubble({
     role === 'user'
       ? getInitials(customerName)
       : role === 'assistant'
-        ? getInitials(agentName ?? roleInitialsFallback.assistant ?? 'AI')
+        ? (agentName ? getInitials(agentName) : 'AI')
         : (roleInitialsFallback[role] ?? '?');
 
   /* System messages — centered event pill, no bubble chrome */
@@ -383,7 +382,7 @@ export function MessageBubble({
         )}
         {!isGrouped && isOutgoing && (
           <span className="text-[10px] px-1" style={{ color: 'var(--ds-text-tertiary)' }}>
-            {agentName ?? 'AI'}
+            {agentName ?? 'AI Assistant'}
           </span>
         )}
 

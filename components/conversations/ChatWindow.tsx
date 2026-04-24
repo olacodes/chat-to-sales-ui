@@ -173,15 +173,13 @@ export function ChatWindow({
         </div>
       );
     }
+    const agentName = assignedTo
+      ? (assignedTo.displayName ?? assignedTo.email.split('@')[0])
+      : null;
+
     return messages.map((msg, idx) => {
       const prev = messages[idx - 1];
       const isGrouped = Boolean(prev?.role === msg.role);
-      const agentMember = msg.role === 'assistant' && msg.senderIdentifier
-        ? staff?.find((s) => s.id === msg.senderIdentifier)
-        : undefined;
-      const agentName = agentMember
-        ? (agentMember.displayName ?? agentMember.email.split('@')[0])
-        : null;
       return (
         <MessageBubble
           key={msg.id}
