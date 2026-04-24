@@ -26,9 +26,6 @@ export function ConversationListItem({
   const assigneeLabel = assignedTo
     ? (assignedTo.displayName ?? assignedTo.email.split('@')[0])
     : null;
-  const assigneeInitials = assignedTo
-    ? getInitials(assignedTo.displayName ?? assignedTo.email)
-    : null;
   const assigneeTooltip = assignedTo
     ? `${assignedTo.displayName ?? assignedTo.email}${assignedTo.displayName ? ` (${assignedTo.email})` : ''}`
     : null;
@@ -125,23 +122,14 @@ export function ConversationListItem({
 
         {assignedTo && (
           <div
-            className="flex items-center gap-1 mt-1"
+            className="flex items-center justify-end gap-1 mt-1"
             title={assigneeTooltip ?? undefined}
           >
-            <div
-              className="h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
-              style={{
-                backgroundColor: 'var(--ds-bg-subtle)',
-                color: 'var(--ds-text-secondary)',
-              }}
-            >
-              {assigneeInitials}
-            </div>
             <span
-              className="text-[11px] truncate"
+              className="text-[11px]"
               style={{ color: 'var(--ds-text-tertiary)' }}
             >
-              {assigneeLabel}
+              Assigned: {assigneeLabel}
             </span>
           </div>
         )}
