@@ -1,29 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useAppStore } from '@/store';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { ConversationList } from '@/components/conversations/ConversationList';
-import { ChatWindow } from '@/components/conversations/ChatWindow';
-import { RealtimeToast } from '@/components/conversations/RealtimeToast';
-import { WsEventSimulator } from '@/components/conversations/WsEventSimulator';
-import { useConversationsRealtime } from '@/lib/hooks/useConversationsRealtime';
+import { useConversations } from '@/hooks/useConversations';
 import { webhookService } from '@/lib/api/services';
 import { ApiError } from '@/lib/api/client';
-import {
-  useConversations,
-  useMessages,
-  useReactToMessage,
-  useSendMessage,
-  useStaff,
-  useAssignConversation,
-  useScheduledMessages,
-  useCreateScheduledMessage,
-  useCancelScheduledMessage,
-} from '@/hooks/useConversations';
-import type { StaffMember } from '@/store';
+
+const LAST_CONVERSATION_KEY = 'lastConversationId';
 
 // ─── Inbound message simulator ────────────────────────────────────────────────
+// Only shown when the API confirms the conversation list is empty.
 
 function InboundMessageForm() {
   const [phone, setPhone] = useState('+2348012345678');
@@ -83,7 +70,7 @@ function InboundMessageForm() {
             </svg>
           </div>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
-            No active conversations
+            No conversations yet
           </h2>
           <p className="mt-1 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
             Simulate an inbound message to start a conversation via the backend webhook.
@@ -181,155 +168,44 @@ function InboundMessageForm() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ConversationsPage() {
-  const activeConversationId = useAppStore((s) => s.activeConversationId);
-  const setActiveConversation = useAppStore((s) => s.setActiveConversation);
-  const updateConversation = useAppStore((s) => s.updateConversation);
-  const resetUnread = useAppStore((s) => s.resetUnread);
-  const orders = useAppStore((s) => s.orders);
-  const currentUser = useAuthStore((s) => s.user);
-  const currentUserId = currentUser?.user_id ?? null;
-
-  // ── React Query data ───────────────────────────────────────────────────────
-  const {
-    data: convsData,
-    isLoading: isLoadingConvs,
-    hasNextPage: hasMoreConvs,
-    isFetchingNextPage: isFetchingMoreConvs,
-    fetchNextPage: fetchMoreConvs,
-  } = useConversations();
-
-  const { data: staff = [] } = useStaff();
-  const { mutate: assignConversation, isPending: isAssigning } = useAssignConversation();
-
+  const router = useRouter();
+  const { data: convsData, isLoading } = useConversations();
   const conversations = convsData?.pages.flatMap((p) => p.items) ?? [];
 
-  const {
-    data: messagesData,
-    isLoading: isLoadingMessages,
-    hasNextPage: hasMoreMessages,
-    isFetchingNextPage: isFetchingMoreMessages,
-    fetchNextPage: fetchMoreMessages,
-  } = useMessages(activeConversationId);
+  useEffect(() => {
+    if (isLoading) return;
 
-  const messages = messagesData?.pages.flatMap((p) => p.items) ?? [];
+    // #2: restore last visited conversation
+    const lastId = localStorage.getItem(LAST_CONVERSATION_KEY);
+    if (lastId && conversations.some((c) => c.id === lastId)) {
+      router.replace(`/conversations/${lastId}`);
+      return;
+    }
 
-  const { mutate: sendMessage, isPending: isSending } = useSendMessage();
-  const { mutate: reactToMessage } = useReactToMessage();
-  const { data: scheduledMessages = [] } = useScheduledMessages(activeConversationId);
-  const { mutate: createScheduledMessage } = useCreateScheduledMessage();
-  const { mutate: cancelScheduledMessage } = useCancelScheduledMessage();
+    // #1: fall back to the first conversation in the list
+    if (conversations.length > 0) {
+      router.replace(`/conversations/${conversations[0].id}`);
+    }
 
-  // ── Realtime ───────────────────────────────────────────────────────────────
-  const { status, lastActivity, clearActivity } = useConversationsRealtime();
+    // If neither applies the list is confirmed empty — render InboundMessageForm below.
+  }, [isLoading, conversations, router]);
 
-  const activeConversation = conversations.find((c) => c.id === activeConversationId) ?? null;
-
-  // Derive the order linked to the active conversation
-  const linkedOrder = orders.find((o) => o.conversationId === activeConversationId) ?? null;
-
-  function handleSendMessage(conversationId: string, content: string) {
-    const conversation = conversations.find((c) => c.id === conversationId);
-    sendMessage({
-      conversationId,
-      payload: { sender_role: 'assistant', content },
-      recipient: conversation?.customerIdentifier ?? '',
-    });
-  }
-
-  function handleMarkResolved(conversationId: string) {
-    updateConversation(conversationId, { status: 'resolved' });
-  }
-
-  function handleReact(conversationId: string, messageId: string, emoji: string) {
-    if (!currentUserId) return;
-    reactToMessage({ conversationId, messageId, emoji, userId: currentUserId });
-  }
-
-  function handleAssign(
-    conversationId: string,
-    userId: string | null,
-    staffMember: StaffMember | null,
-  ) {
-    assignConversation({
-      conversationId,
-      userId,
-      staffMember,
-      assignedByUserId: currentUserId,
-    });
-  }
-
-  function handleSelectConversation(id: string) {
-    setActiveConversation(id);
-    resetUnread(id);
-  }
-
-  function handleBack() {
-    setActiveConversation(null);
-  }
-
-  function handleScheduleMessage(conversationId: string, content: string, scheduledFor: string) {
-    createScheduledMessage({ conversationId, payload: { content, scheduled_for: scheduledFor } });
-  }
-
-  function handleCancelScheduledMessage(conversationId: string, scheduledMessageId: string) {
-    cancelScheduledMessage({ conversationId, scheduledMessageId });
-  }
-
-  // On mobile: show chat panel when a conversation is active, list otherwise.
-  // On md+: both panels are always visible side-by-side.
-  const showChat = activeConversation !== null;
-
-  return (
-    <div className="relative flex h-full overflow-hidden -m-6">
-      {/* Conversation list — hidden on mobile when chat is open */}
-      <div className={`${showChat ? 'hidden md:flex' : 'flex'} h-full w-full md:w-auto`}>
-        <ConversationList
-          conversations={conversations}
-          activeId={activeConversationId}
-          onSelect={handleSelectConversation}
-          currentUserId={currentUserId}
-          isLoading={isLoadingConvs}
-          hasNextPage={hasMoreConvs}
-          isFetchingNextPage={isFetchingMoreConvs}
-          onLoadMore={() => fetchMoreConvs()}
+  // While loading, or while a redirect is about to fire, show a neutral skeleton
+  // so the empty form never flashes for users who have active conversations.
+  if (isLoading || conversations.length > 0) {
+    return (
+      <div
+        className="flex flex-1 items-center justify-center"
+        style={{ backgroundColor: 'var(--ds-bg-sunken)' }}
+      >
+        <div
+          className="h-3 w-28 rounded animate-pulse"
+          style={{ backgroundColor: 'var(--ds-bg-subtle)' }}
         />
       </div>
+    );
+  }
 
-      {/* Chat panel — full-screen on mobile when active, flex-1 on md+ */}
-      <div className={`${showChat ? 'flex' : 'hidden md:flex'} h-full flex-1 min-w-0`}>
-        {activeConversation ? (
-          <ChatWindow
-            conversation={activeConversation}
-            messages={messages}
-            isLoadingMessages={isLoadingMessages}
-            hasMoreMessages={hasMoreMessages}
-            isFetchingMoreMessages={isFetchingMoreMessages}
-            onLoadMoreMessages={() => fetchMoreMessages()}
-            onSendMessage={handleSendMessage}
-            isSending={isSending}
-            wsStatus={status}
-            linkedOrder={linkedOrder}
-            onMarkResolved={handleMarkResolved}
-            onBack={handleBack}
-            staff={staff}
-            currentUserId={currentUserId}
-            onAssign={handleAssign}
-            isAssigning={isAssigning}
-            onReact={handleReact}
-            scheduledMessages={scheduledMessages}
-            onCancelScheduledMessage={handleCancelScheduledMessage}
-            onScheduleMessage={handleScheduleMessage}
-          />
-        ) : (
-          <InboundMessageForm />
-        )}
-      </div>
-
-      <RealtimeToast activity={lastActivity} onDismiss={clearActivity} />
-
-      {process.env.NODE_ENV === 'development' && (
-        <WsEventSimulator activeConversationId={activeConversationId} />
-      )}
-    </div>
-  );
+  // API returned an empty list — show the simulator form.
+  return <InboundMessageForm />;
 }

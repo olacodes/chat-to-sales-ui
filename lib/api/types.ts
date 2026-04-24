@@ -273,6 +273,23 @@ export interface RecentActivityOut {
   [key: string]: unknown;
 }
 
+// ─── Today's Focus ────────────────────────────────────────────────────────────
+
+export interface TodayFocusItemOut {
+  id: string;
+  kind: 'order' | 'conversation';
+  urgency: 'overdue' | 'waiting' | 'follow_up';
+  title: string;
+  customer_name: string | null;
+  conversation_id: string;
+  since: string;
+}
+
+export interface TodayFocusOut {
+  items: TodayFocusItemOut[];
+  total: number;
+}
+
 // ─── Reports ──────────────────────────────────────────────────────────────────
 
 export interface ReportConfigOut {

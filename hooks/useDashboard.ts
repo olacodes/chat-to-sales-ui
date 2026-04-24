@@ -14,7 +14,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api/endpoints/dashboard';
-import type { DashboardOverview, DashboardActivityItem } from '@/lib/api/endpoints/dashboard';
+import type { DashboardOverview, DashboardActivityItem, TodayFocusItem } from '@/lib/api/endpoints/dashboard';
 
 // ─── Query key factory ────────────────────────────────────────────────────────
 
@@ -22,6 +22,7 @@ export const dashboardKeys = {
   all: ['dashboard'] as const,
   overview: () => [...dashboardKeys.all, 'overview'] as const,
   activity: () => [...dashboardKeys.all, 'activity'] as const,
+  focus: () => [...dashboardKeys.all, 'focus'] as const,
 } as const;
 
 // ─── useDashboardOverview ─────────────────────────────────────────────────────
@@ -73,6 +74,30 @@ export function useRecentActivity() {
       }
     },
     staleTime: 15_000,
+    retry: false,
+  });
+}
+
+// ─── useTodayFocus ────────────────────────────────────────────────────────────
+
+/**
+ * Fetches prioritised action items for today's focus panel.
+ * Returns an empty array (not an error) if the endpoint doesn't exist yet.
+ *
+ * @example
+ * const { data: items = [], isLoading } = useTodayFocus();
+ */
+export function useTodayFocus() {
+  return useQuery<TodayFocusItem[], Error>({
+    queryKey: dashboardKeys.focus(),
+    queryFn: async ({ signal }) => {
+      try {
+        return await dashboardApi.getTodayFocus(signal);
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 30_000,
     retry: false,
   });
 }

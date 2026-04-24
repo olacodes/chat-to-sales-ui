@@ -91,6 +91,10 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       'message.received',
       (msg) => {
         const p = msg.payload;
+        // A staff reply resolves a "waiting" conversation — refresh focus list
+        if (p.sender_role === 'assistant' || p.sender_role === 'system') {
+          qc.invalidateQueries({ queryKey: dashboardKeys.focus() });
+        }
         // Normalize: backend may emit snake_case fields (conversation_id,
         // created_at) or camelCase (conversationId, timestamp) depending on
         // the serialization config. Handle both to stay resilient.
@@ -190,6 +194,9 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         qc.setQueryData<Order>(orderKeys.detail(p.orderId), (old) =>
           old ? { ...old, status: p.status, updatedAt: p.updatedAt } : old,
         );
+
+        // Order state change may resolve or create a focus item
+        qc.invalidateQueries({ queryKey: dashboardKeys.focus() });
       },
     );
 
@@ -200,6 +207,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       (msg) => {
         log('order.created', { id: msg.payload.orderId });
         qc.invalidateQueries({ queryKey: orderKeys.lists() });
+        // New inquiry may appear in the focus list
+        qc.invalidateQueries({ queryKey: dashboardKeys.focus() });
       },
     );
 
@@ -300,6 +309,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         log('conversation.closed', p.id);
         // Treat the same as conversation.updated — marks status + patches last message
         patchConversation(qc, { ...p, status: p.status ?? 'closed' });
+        // Resolved conversation should disappear from focus list
+        qc.invalidateQueries({ queryKey: dashboardKeys.focus() });
       },
     );
 

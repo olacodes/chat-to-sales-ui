@@ -20,8 +20,18 @@ export function ConversationListItem({
   isActive,
   onClick,
 }: Readonly<ConversationListItemProps>) {
-  const { customerName, customerIdentifier, status, lastMessage, lastMessageAt, unreadCount } =
+  const { customerName, customerIdentifier, status, lastMessage, lastMessageAt, unreadCount, assignedTo } =
     conversation;
+
+  const assigneeLabel = assignedTo
+    ? (assignedTo.displayName ?? assignedTo.email.split('@')[0])
+    : null;
+  const assigneeInitials = assignedTo
+    ? getInitials(assignedTo.displayName ?? assignedTo.email)
+    : null;
+  const assigneeTooltip = assignedTo
+    ? `${assignedTo.displayName ?? assignedTo.email}${assignedTo.displayName ? ` (${assignedTo.email})` : ''}`
+    : null;
 
   const displayName = customerName || customerIdentifier;
   const initials = getInitials(displayName);
@@ -112,6 +122,29 @@ export function ConversationListItem({
             </span>
           )}
         </div>
+
+        {assignedTo && (
+          <div
+            className="flex items-center gap-1 mt-1"
+            title={assigneeTooltip ?? undefined}
+          >
+            <div
+              className="h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+              style={{
+                backgroundColor: 'var(--ds-bg-subtle)',
+                color: 'var(--ds-text-secondary)',
+              }}
+            >
+              {assigneeInitials}
+            </div>
+            <span
+              className="text-[11px] truncate"
+              style={{ color: 'var(--ds-text-tertiary)' }}
+            >
+              {assigneeLabel}
+            </span>
+          </div>
+        )}
       </div>
     </button>
   );

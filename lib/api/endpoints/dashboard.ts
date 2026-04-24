@@ -15,6 +15,8 @@ import type {
   DashboardMetricsOut,
   RecentActivityItemOut,
   RecentActivityOut,
+  TodayFocusItemOut,
+  TodayFocusOut,
 } from '../types';
 
 // ─── Domain types (camelCase, used in UI) ────────────────────────────────────
@@ -30,6 +32,18 @@ export interface DashboardOverview {
 }
 
 export type ActivityKind = 'order' | 'payment' | 'conversation' | 'message' | 'generic';
+
+export type FocusUrgency = 'overdue' | 'waiting' | 'follow_up';
+
+export interface TodayFocusItem {
+  id: string;
+  kind: 'order' | 'conversation';
+  urgency: FocusUrgency;
+  title: string;
+  customerName: string | null;
+  conversationId: string;
+  since: string;
+}
 
 export interface DashboardActivityItem {
   id: string;
@@ -109,6 +123,18 @@ function mapActivityItem(item: RecentActivityItemOut): DashboardActivityItem {
   };
 }
 
+function mapFocusItem(raw: TodayFocusItemOut): TodayFocusItem {
+  return {
+    id: raw.id,
+    kind: raw.kind,
+    urgency: raw.urgency,
+    title: raw.title,
+    customerName: raw.customer_name,
+    conversationId: raw.conversation_id,
+    since: raw.since,
+  };
+}
+
 function extractItems(response: RecentActivityOut | RecentActivityItemOut[]): RecentActivityItemOut[] {
   if (Array.isArray(response)) return response;
   if (response.items && Array.isArray(response.items)) return response.items;
@@ -160,5 +186,12 @@ export const dashboardApi = {
         signal,
       )
       .then((response) => extractItems(response as RecentActivityOut).map(mapActivityItem));
+  },
+
+  /** GET /api/v1/dashboard/today-focus */
+  getTodayFocus(signal?: AbortSignal): Promise<TodayFocusItem[]> {
+    return apiClient
+      .get<TodayFocusOut>(`${BASE}/dashboard/today-focus`, undefined, signal)
+      .then((response) => response.items.map(mapFocusItem));
   },
 };
