@@ -13,6 +13,26 @@ export interface StaffMember {
 }
 export type OrderStatus = 'inquiry' | 'pending' | 'confirmed' | 'paid' | 'completed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type CreditSaleStatus = 'active' | 'settled' | 'disputed' | 'written_off';
+
+export interface CreditSale {
+  id: string;
+  tenantId: string;
+  orderId: string;
+  conversationId: string | null;
+  customerName: string;
+  amount: number;
+  currency: string;
+  dueDate: string | null;
+  status: CreditSaleStatus;
+  reminderIntervalDays: number;
+  maxReminders: number;
+  remindersSent: number;
+  lastRemindedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface Reaction {

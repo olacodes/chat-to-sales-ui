@@ -13,12 +13,14 @@ interface ConversationListItemProps {
   conversation: Conversation;
   isActive: boolean;
   onClick: () => void;
+  hasDebt?: boolean;
 }
 
 export function ConversationListItem({
   conversation,
   isActive,
   onClick,
+  hasDebt = false,
 }: Readonly<ConversationListItemProps>) {
   const { customerName, customerIdentifier, status, lastMessage, lastMessageAt, unreadCount, assignedTo } =
     conversation;
@@ -107,6 +109,18 @@ export function ConversationListItem({
           >
             {lastMessage ?? 'No messages yet'}
           </p>
+          {hasDebt && (
+            <span
+              className="shrink-0 h-4 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center"
+              style={{
+                backgroundColor: 'var(--ds-warning-dot)',
+                color: '#fff',
+              }}
+              title="Outstanding credit sale"
+            >
+              ₦
+            </span>
+          )}
           {hasUnread && (
             <span
               className="shrink-0 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center animate-badge-pop"

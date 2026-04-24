@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Conversation, Message, Order, ScheduledMessage, StaffMember } from '@/store';
+import type { Conversation, CreditSale, Message, Order, ScheduledMessage, StaffMember } from '@/store';
 import type { ConnectionStatus } from '@/lib/websocket/client';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
@@ -50,6 +50,14 @@ interface ChatWindowProps {
   onCancelScheduledMessage?: (conversationId: string, scheduledMessageId: string) => void;
   /** Called when the user schedules a message from the input. */
   onScheduleMessage?: (conversationId: string, content: string, scheduledFor: string) => void;
+  /** Active credit sale for this conversation — shows Send Reminder button */
+  activeCreditSale?: CreditSale | null;
+  /** Called when the agent taps "Send Reminder" */
+  onSendReminder?: (creditSaleId: string) => void;
+  isSendingReminder?: boolean;
+  /** Called when the agent marks the linked order as a credit sale */
+  onMarkAsCredit?: (orderId: string, amount: number) => void;
+  hasActiveCreditSale?: boolean;
 }
 
 const statusBadge: Record<Conversation['status'], React.ReactElement> = {
@@ -146,6 +154,11 @@ export function ChatWindow({
   scheduledMessages = [],
   onCancelScheduledMessage,
   onScheduleMessage,
+  activeCreditSale,
+  onSendReminder,
+  isSendingReminder = false,
+  onMarkAsCredit,
+  hasActiveCreditSale = false,
 }: Readonly<ChatWindowProps>) {
   const { id, customerName, customerIdentifier, status, assignedTo } = conversation;
   const messages = messagesProp ?? conversation.messages;
@@ -280,6 +293,28 @@ export function ChatWindow({
               isAssigning={isAssigning}
               onAssign={(userId, staffMember) => onAssign(id, userId, staffMember)}
             />
+          )}
+
+          {activeCreditSale && onSendReminder && (
+            <button
+              type="button"
+              onClick={() => onSendReminder(activeCreditSale.id)}
+              disabled={isSendingReminder}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              style={{
+                color: 'var(--ds-warning-text)',
+                border: '1px solid var(--ds-warning-border)',
+                backgroundColor: 'var(--ds-warning-bg)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSendingReminder) e.currentTarget.style.opacity = '0.8';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+            >
+              {isSendingReminder ? 'Sending…' : 'Send Reminder'}
+            </button>
           )}
 
           {status !== 'resolved' && onMarkResolved && (
@@ -421,6 +456,8 @@ export function ChatWindow({
           onViewDetails={onViewOrderDetails}
           collapsed={orderCollapsed}
           onToggleCollapse={() => setOrderCollapsed((prev) => !prev)}
+          hasActiveCreditSale={hasActiveCreditSale}
+          onMarkAsCredit={onMarkAsCredit}
         />
       )}
 

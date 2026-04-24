@@ -17,6 +17,7 @@ import {
   useCreateScheduledMessage,
   useCancelScheduledMessage,
 } from '@/hooks/useConversations';
+import { useCreditSales, useCreateCreditSale, useSendCreditReminder } from '@/hooks/useCreditSales';
 import type { StaffMember } from '@/store';
 
 const LAST_CONVERSATION_KEY = 'lastConversationId';
@@ -66,6 +67,13 @@ export default function ConversationPage() {
   const { mutate: assignConversation, isPending: isAssigning } = useAssignConversation();
 
   const linkedOrder = orders.find((o) => o.conversationId === id) ?? null;
+
+  const { data: creditSales = [] } = useCreditSales('active');
+  const { mutate: createCreditSale } = useCreateCreditSale();
+  const { mutate: sendCreditReminder, isPending: isSendingReminder } = useSendCreditReminder();
+
+  const activeCreditSale = creditSales.find((c) => c.conversationId === id) ?? null;
+  const hasActiveCreditSale = Boolean(linkedOrder && creditSales.some((c) => c.orderId === linkedOrder.id));
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -119,6 +127,20 @@ export default function ConversationPage() {
     cancelScheduledMessage({ conversationId, scheduledMessageId });
   }
 
+  function handleMarkAsCredit(orderId: string, amount: number) {
+    createCreditSale({
+      order_id: orderId,
+      conversation_id: id,
+      amount,
+      currency: linkedOrder?.currency ?? 'NGN',
+      customer_name: activeConversation?.customerName ?? '',
+    });
+  }
+
+  function handleSendReminder(creditSaleId: string) {
+    sendCreditReminder(creditSaleId);
+  }
+
   function handleBack() {
     router.push('/conversations');
   }
@@ -162,6 +184,11 @@ export default function ConversationPage() {
       scheduledMessages={scheduledMessages}
       onCancelScheduledMessage={handleCancelScheduledMessage}
       onScheduleMessage={handleScheduleMessage}
+      activeCreditSale={activeCreditSale}
+      onSendReminder={handleSendReminder}
+      isSendingReminder={isSendingReminder}
+      onMarkAsCredit={handleMarkAsCredit}
+      hasActiveCreditSale={hasActiveCreditSale}
     />
   );
 }

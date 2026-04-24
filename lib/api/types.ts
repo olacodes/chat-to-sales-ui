@@ -198,6 +198,50 @@ export interface InitiatePaymentPayload {
   method?: string;
 }
 
+// ─── Credit Sales ─────────────────────────────────────────────────────────────
+
+export interface CreditSaleOut {
+  id: string;
+  tenant_id: string;
+  order_id: string;
+  conversation_id: string | null;
+  customer_name: string;
+  amount: number;
+  currency: string;
+  due_date: string | null;
+  status: 'active' | 'settled' | 'disputed' | 'written_off';
+  reminder_interval_days: number;
+  max_reminders: number;
+  reminders_sent: number;
+  last_reminded_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreditSaleListResponse {
+  items: CreditSaleOut[];
+  total: number;
+}
+
+export interface CreateCreditSalePayload {
+  order_id: string;
+  conversation_id?: string | null;
+  customer_name: string;
+  amount: number;
+  currency?: string;
+  due_date?: string | null;
+  reminder_interval_days?: number;
+  max_reminders?: number;
+  notes?: string | null;
+}
+
+export interface ReminderOut {
+  credit_sale_id: string;
+  reminders_sent: number;
+  message_sent: string;
+}
+
 export interface InboundWebhookPayload {
   channel: string;
   /** The customer's identifier on the given channel (e.g. phone number, user id). */

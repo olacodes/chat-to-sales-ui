@@ -8,6 +8,7 @@ import { RealtimeToast } from '@/components/conversations/RealtimeToast';
 import { WsEventSimulator } from '@/components/conversations/WsEventSimulator';
 import { useConversationsRealtime } from '@/lib/hooks/useConversationsRealtime';
 import { useConversations } from '@/hooks/useConversations';
+import { useCreditSales } from '@/hooks/useCreditSales';
 
 export default function ConversationsLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -29,6 +30,11 @@ export default function ConversationsLayout({ children }: { children: React.Reac
 
   const conversations = convsData?.pages.flatMap((p) => p.items) ?? [];
   const { lastActivity, clearActivity } = useConversationsRealtime();
+
+  const { data: creditSales = [] } = useCreditSales('active');
+  const debtConversationIds = new Set(
+    creditSales.flatMap((c) => (c.conversationId ? [c.conversationId] : [])),
+  );
 
   function handleSelectConversation(id: string) {
     setActiveConversation(id);
@@ -52,6 +58,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
           hasNextPage={hasMoreConvs}
           isFetchingNextPage={isFetchingMoreConvs}
           onLoadMore={() => fetchMoreConvs()}
+          debtConversationIds={debtConversationIds}
         />
       </div>
 

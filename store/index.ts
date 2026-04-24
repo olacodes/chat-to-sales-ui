@@ -27,4 +27,6 @@ export type {
   OrderStatus,
   PaymentStatus,
   MessageRole,
+  CreditSale,
+  CreditSaleStatus,
 } from './useAppStore';

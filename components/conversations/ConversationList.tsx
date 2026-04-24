@@ -21,6 +21,8 @@ interface ConversationListProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
+  /** Set of conversation IDs with an active credit sale (debt badge) */
+  debtConversationIds?: Set<string>;
 }
 
 const SKELETON_IDS = ['sk-1', 'sk-2', 'sk-3', 'sk-4'] as const;
@@ -41,6 +43,7 @@ export function ConversationList({
   hasNextPage = false,
   isFetchingNextPage = false,
   onLoadMore,
+  debtConversationIds,
 }: Readonly<ConversationListProps>) {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ConversationTab>('unassigned');
@@ -126,6 +129,7 @@ export function ConversationList({
               conversation={{ ...conv, unreadCount: unreadCounts[conv.id] ?? 0 }}
               isActive={conv.id === activeId}
               onClick={() => onSelect(conv.id)}
+              hasDebt={debtConversationIds?.has(conv.id) ?? false}
             />
           </li>
         ))}

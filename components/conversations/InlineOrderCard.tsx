@@ -177,6 +177,10 @@ interface InlineOrderCardProps {
   /** Collapse to a minimal one-line strip */
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  /** Whether a credit sale already exists for this order */
+  hasActiveCreditSale?: boolean;
+  /** Called when the agent marks this order as a credit sale */
+  onMarkAsCredit?: (orderId: string, amount: number) => void;
 }
 
 export function InlineOrderCard({
@@ -184,6 +188,8 @@ export function InlineOrderCard({
   onViewDetails,
   collapsed = false,
   onToggleCollapse,
+  hasActiveCreditSale = false,
+  onMarkAsCredit,
 }: Readonly<InlineOrderCardProps>) {
   const { id, status, total, currency, items } = order;
   const style = STATUS_STYLES[status];
@@ -244,6 +250,22 @@ export function InlineOrderCard({
           >
             {formatAmount(total, currency)}
           </span>
+
+          {/* Mark as credit sale — only for confirmed/completed orders without an existing credit sale */}
+          {onMarkAsCredit && !hasActiveCreditSale && (status === 'confirmed' || status === 'completed') && (
+            <button
+              type="button"
+              onClick={() => onMarkAsCredit(id, total)}
+              className="text-[10px] font-medium px-2 py-1 rounded-lg transition-colors"
+              style={{ color: 'var(--ds-warning-dot)' }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)')
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
+            >
+              Mark Credit
+            </button>
+          )}
 
           {/* View details */}
           {onViewDetails && (
