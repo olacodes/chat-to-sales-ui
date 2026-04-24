@@ -114,6 +114,8 @@ interface MessageBubbleProps {
   onReact?: (emoji: string) => void;
   /** The currently authenticated user's ID — used to highlight their reaction. */
   currentUserId?: string | null;
+  /** Resolved agent name for assistant messages — derived from the staff list by the caller. */
+  agentName?: string | null;
 }
 
 /* ── Delivery indicator ──────────────────────────────────────── */
@@ -273,7 +275,7 @@ function BubbleToolbar({
 /* ── Avatar initials mapping ─────────────────────────────────── */
 
 const roleInitialsFallback: Partial<Record<MessageRole, string>> = {
-  assistant: 'AG',
+  assistant: 'AI',
   system: 'SY',
 };
 
@@ -287,6 +289,7 @@ export function MessageBubble({
   onReply,
   onReact,
   currentUserId,
+  agentName,
 }: Readonly<MessageBubbleProps>) {
   const { role, content, timestamp, reactions } = message;
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
@@ -297,7 +300,11 @@ export function MessageBubble({
   const isOutgoing = role === 'assistant';
 
   const bubbleInitials =
-    role === 'user' ? getInitials(customerName) : (roleInitialsFallback[role] ?? '?');
+    role === 'user'
+      ? getInitials(customerName)
+      : role === 'assistant'
+        ? getInitials(agentName ?? roleInitialsFallback.assistant ?? 'AI')
+        : (roleInitialsFallback[role] ?? '?');
 
   /* System messages — centered event pill, no bubble chrome */
   if (role === 'system') {
@@ -368,10 +375,15 @@ export function MessageBubble({
           />
         )}
 
-        {/* Sender label — only for first message in a group from customer */}
+        {/* Sender label — first message in a group */}
         {!isGrouped && !isOutgoing && (
           <span className="text-[10px] px-1" style={{ color: 'var(--ds-text-tertiary)' }}>
             {customerName}
+          </span>
+        )}
+        {!isGrouped && isOutgoing && (
+          <span className="text-[10px] px-1" style={{ color: 'var(--ds-text-tertiary)' }}>
+            {agentName ?? 'AI'}
           </span>
         )}
 

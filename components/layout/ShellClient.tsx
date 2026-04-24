@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { OfflineBanner } from './OfflineBanner';
 import { restoreSession } from '@/lib/auth/service';
 
 /**
@@ -36,6 +37,7 @@ export function ShellClient({ children }: Readonly<ShellClientProps>) {
 
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
+        <OfflineBanner />
         <main
           className="flex-1 overflow-y-auto scrollbar-thin p-6"
           style={{ backgroundColor: 'var(--ds-bg-base)' }}

@@ -55,8 +55,8 @@ function mapConversation(c: ConversationOut): Conversation {
     id: c.id,
     customerName: c.customer_name ?? c.customer_identifier,
     customerIdentifier: c.customer_identifier,
-    // Backend uses 'closed'; store uses 'resolved'
-    status: c.status === 'closed' ? 'resolved' : c.status,
+    // Backend: active | escalated | closed/resolved → Frontend: open | pending | resolved
+    status: c.status === 'active' ? 'open' : c.status === 'escalated' ? 'pending' : 'resolved',
     assignedTo: c.assigned_to ? mapStaffMember(c.assigned_to) : null,
     lastMessage: c.last_message?.content ?? c.messages?.at(-1)?.content ?? null,
     lastMessageAt: c.last_message?.timestamp ?? c.messages?.at(-1)?.created_at ?? null,
