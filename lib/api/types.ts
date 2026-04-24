@@ -40,7 +40,7 @@ export interface ConversationListItem {
   tenant_id: string;
   customer_identifier: string;
   customer_name?: string;
-  status: 'open' | 'closed' | 'pending';
+  status: 'active' | 'escalated' | 'closed' | 'resolved';
   assigned_to?: StaffMemberOut | null;
   created_at: string;
   updated_at: string;
@@ -52,7 +52,7 @@ export interface ConversationOut {
   tenant_id: string;
   customer_identifier: string;
   customer_name?: string;
-  status: 'open' | 'closed' | 'pending';
+  status: 'active' | 'escalated' | 'closed' | 'resolved';
   assigned_to?: StaffMemberOut | null;
   created_at: string;
   updated_at: string;
