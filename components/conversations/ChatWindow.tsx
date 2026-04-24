@@ -173,8 +173,9 @@ export function ChatWindow({
         </div>
       );
     }
-    const agentName = assignedTo
-      ? (assignedTo.displayName ?? assignedTo.email.split('@')[0])
+    const agentSource = assignedTo ?? staff.find((s) => s.id === currentUserId) ?? null;
+    const agentName = agentSource
+      ? (agentSource.displayName ?? agentSource.email.split('@')[0])
       : null;
 
     return messages.map((msg, idx) => {

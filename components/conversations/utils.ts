@@ -25,13 +25,10 @@ export function formatMessageTime(iso: string): string {
   });
 }
 
-/** Initials from a full name: "Alice Johnson" → "AJ" */
+/** Initials from a full name: "Ola" → "OL", "Ola Ade" → "OA" */
 export function getInitials(name: string | null | undefined): string {
   if (!name) return '?';
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
 }

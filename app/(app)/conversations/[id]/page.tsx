@@ -76,6 +76,17 @@ export default function ConversationPage() {
       payload: { sender_role: 'assistant', content },
       recipient: conversation?.customerIdentifier ?? '',
     });
+
+    // Auto-assign to the current agent when replying to an unassigned conversation
+    if (!conversation?.assignedTo && currentUserId) {
+      const currentStaffMember = staff.find((s) => s.id === currentUserId) ?? null;
+      assignConversation({
+        conversationId,
+        userId: currentUserId,
+        staffMember: currentStaffMember,
+        assignedByUserId: currentUserId,
+      });
+    }
   }
 
   function handleMarkResolved(conversationId: string) {
