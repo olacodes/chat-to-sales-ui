@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAppStore } from '@/store';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -18,7 +18,7 @@ import {
   useCancelScheduledMessage,
 } from '@/hooks/useConversations';
 import { useCreditSales, useCreateCreditSale, useSendCreditReminder } from '@/hooks/useCreditSales';
-import { useCreateAndConfirmOrder, useConfirmOrder } from '@/hooks/useOrders';
+import { useOrders, useCreateAndConfirmOrder, useConfirmOrder, usePayOrder } from '@/hooks/useOrders';
 import type { StaffMember } from '@/store';
 import type { CreateOrderPayload } from '@/lib/api/types';
 
@@ -31,8 +31,6 @@ export default function ConversationPage() {
 
   const setActiveConversation = useAppStore((s) => s.setActiveConversation);
   const resetUnread = useAppStore((s) => s.resetUnread);
-  const updateConversation = useAppStore((s) => s.updateConversation);
-  const orders = useAppStore((s) => s.orders);
   const currentUser = useAuthStore((s) => s.user);
   const currentUserId = currentUser?.user_id ?? null;
 
@@ -68,7 +66,16 @@ export default function ConversationPage() {
   const { data: staff = [] } = useStaff();
   const { mutate: assignConversation, isPending: isAssigning } = useAssignConversation();
 
-  const linkedOrder = orders.find((o) => o.conversationId === id) ?? null;
+  const { data: orders = [] } = useOrders();
+  const conversationOrders = orders
+    .filter((o) => o.conversationId === id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const [orderIndex, setOrderIndex] = useState(0);
+  // Reset to the newest order whenever the conversation changes
+  useEffect(() => { setOrderIndex(0); }, [id]);
+
+  const linkedOrder = conversationOrders[orderIndex] ?? null;
 
   const { data: creditSales = [] } = useCreditSales('active');
   const { mutate: createCreditSale } = useCreateCreditSale();
@@ -79,6 +86,7 @@ export default function ConversationPage() {
 
   const { mutate: createOrder, isPending: isCreatingOrder } = useCreateAndConfirmOrder();
   const { mutate: confirmOrder, isPending: isConfirmingOrder } = useConfirmOrder();
+  const { mutate: payOrder, isPending: isPayingOrder } = usePayOrder();
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -100,10 +108,6 @@ export default function ConversationPage() {
         assignedByUserId: currentUserId,
       });
     }
-  }
-
-  function handleMarkResolved(conversationId: string) {
-    updateConversation(conversationId, { status: 'resolved' });
   }
 
   function handleReact(conversationId: string, messageId: string, emoji: string) {
@@ -154,7 +158,12 @@ export default function ConversationPage() {
     confirmOrder(orderId);
   }
 
+  function handlePayOrder(orderId: string) {
+    payOrder(orderId);
+  }
+
   function handleBack() {
+    sessionStorage.setItem('conversations:back', '1');
     router.push('/conversations');
   }
 
@@ -187,7 +196,6 @@ export default function ConversationPage() {
       isSending={isSending}
       wsStatus={wsStatus}
       linkedOrder={linkedOrder}
-      onMarkResolved={handleMarkResolved}
       onBack={handleBack}
       staff={staff}
       currentUserId={currentUserId}
@@ -206,6 +214,12 @@ export default function ConversationPage() {
       isCreatingOrder={isCreatingOrder}
       onConfirmOrder={handleConfirmOrder}
       isConfirmingOrder={isConfirmingOrder}
+      onMarkOrderPaid={handlePayOrder}
+      isMarkingOrderPaid={isPayingOrder}
+      orderIndex={orderIndex}
+      totalOrders={conversationOrders.length}
+      onPrevOrder={() => setOrderIndex((i) => Math.max(0, i - 1))}
+      onNextOrder={() => setOrderIndex((i) => Math.min(conversationOrders.length - 1, i + 1))}
     />
   );
 }

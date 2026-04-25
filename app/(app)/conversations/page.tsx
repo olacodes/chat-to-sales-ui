@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useConversations } from '@/hooks/useConversations';
@@ -172,8 +172,17 @@ export default function ConversationsPage() {
   const { data: convsData, isLoading } = useConversations();
   const conversations = convsData?.pages.flatMap((p) => p.items) ?? [];
 
+  // Detect when the user tapped the Back button from a conversation.
+  // We set a sessionStorage flag there so we skip the auto-redirect here.
+  const userNavigatedBack = useRef(
+    typeof window !== 'undefined' && sessionStorage.getItem('conversations:back') === '1',
+  );
   useEffect(() => {
-    if (isLoading) return;
+    sessionStorage.removeItem('conversations:back');
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || userNavigatedBack.current) return;
 
     // #2: restore last visited conversation
     const lastId = localStorage.getItem(LAST_CONVERSATION_KEY);
@@ -192,7 +201,8 @@ export default function ConversationsPage() {
 
   // While loading, or while a redirect is about to fire, show a neutral skeleton
   // so the empty form never flashes for users who have active conversations.
-  if (isLoading || conversations.length > 0) {
+  // Skip the skeleton when the user tapped Back — they want to see the list.
+  if (!userNavigatedBack.current && (isLoading || conversations.length > 0)) {
     return (
       <div
         className="flex flex-1 items-center justify-center"

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { creditSalesApi } from '@/lib/api/endpoints/credit-sales';
 import type { CreditSale } from '@/store';
 import type { CreateCreditSalePayload } from '@/lib/api/types';
+import { orderKeys } from '@/hooks/useOrders';
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
@@ -43,11 +44,11 @@ export function useSettleCreditSale() {
   return useMutation<CreditSale, Error, string>({
     mutationFn: (id) => creditSalesApi.settle(id),
     onSuccess: (updated) => {
-      // Patch in all list caches
       qc.setQueriesData<CreditSale[]>(
         { queryKey: creditSaleKeys.lists() },
         (old) => old?.map((c) => (c.id === updated.id ? updated : c)),
       );
+      void qc.invalidateQueries({ queryKey: orderKeys.all });
     },
   });
 }
@@ -63,6 +64,23 @@ export function useDisputeCreditSale() {
         { queryKey: creditSaleKeys.lists() },
         (old) => old?.map((c) => (c.id === updated.id ? updated : c)),
       );
+      void qc.invalidateQueries({ queryKey: orderKeys.all });
+    },
+  });
+}
+
+// ─── useWriteOffCreditSale ────────────────────────────────────────────────────
+
+export function useWriteOffCreditSale() {
+  const qc = useQueryClient();
+  return useMutation<CreditSale, Error, string>({
+    mutationFn: (id) => creditSalesApi.writeOff(id),
+    onSuccess: (updated) => {
+      qc.setQueriesData<CreditSale[]>(
+        { queryKey: creditSaleKeys.lists() },
+        (old) => old?.map((c) => (c.id === updated.id ? updated : c)),
+      );
+      void qc.invalidateQueries({ queryKey: orderKeys.all });
     },
   });
 }

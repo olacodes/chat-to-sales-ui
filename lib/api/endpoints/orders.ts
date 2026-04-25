@@ -28,20 +28,22 @@ const ORDER_STATUS_MAP: Record<string, import('@/store').OrderStatus> = {
 // ─── Mapper ───────────────────────────────────────────────────────────────────
 
 function mapOrder(o: OrderOut): Order {
+  const mappedItems = (o.items ?? []).map(
+    (i): OrderItem => ({
+      productId: i.product_id,
+      name: i.name,
+      quantity: i.quantity,
+      unitPrice: i.unit_price,
+    }),
+  );
   return {
     id: o.id,
     conversationId: o.conversation_id ?? null,
     customerId: o.customer_id ?? '',
     customerName: o.customer_name ?? '',
     status: ORDER_STATUS_MAP[o.state] ?? 'pending',
-    items: (o.items ?? []).map(
-      (i): OrderItem => ({
-        productId: i.product_id,
-        name: i.name,
-        quantity: i.quantity,
-        unitPrice: i.unit_price,
-      }),
-    ),
+    items: mappedItems,
+    itemCount: o.item_count ?? mappedItems.length,
     total: o.amount ?? 0,
     currency: o.currency,
     createdAt: o.created_at,

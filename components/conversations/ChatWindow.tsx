@@ -8,7 +8,6 @@ import { ChatInput } from './ChatInput';
 import { InlineOrderCard } from './InlineOrderCard';
 import { AssignmentPanel } from './AssignmentPanel';
 import { CreateOrderModal } from './CreateOrderModal';
-import { Badge } from '@/components/ui/Badge';
 import { formatScheduledTime } from '@/lib/utils/snoozePresets';
 import type { CreateOrderPayload } from '@/lib/api/types';
 
@@ -29,8 +28,6 @@ interface ChatWindowProps {
   linkedOrder?: Order | null;
   /** Opens the order detail drawer/modal */
   onViewOrderDetails?: (orderId: string) => void;
-  /** Marks the conversation as resolved */
-  onMarkResolved?: (conversationId: string) => void;
   /** Mobile only — called when user taps the back arrow to return to the list */
   onBack?: () => void;
   /** Staff list for the assignment dropdown */
@@ -66,25 +63,17 @@ interface ChatWindowProps {
   /** Called when the agent confirms an inquiry order from the inline card */
   onConfirmOrder?: (orderId: string) => void;
   isConfirmingOrder?: boolean;
+  /** Called when the agent marks a confirmed order as paid */
+  onMarkOrderPaid?: (orderId: string) => void;
+  isMarkingOrderPaid?: boolean;
+  /** Order switcher — index of the currently displayed order (0-based) */
+  orderIndex?: number;
+  /** Total number of orders linked to this conversation */
+  totalOrders?: number;
+  onPrevOrder?: () => void;
+  onNextOrder?: () => void;
 }
 
-const statusBadge: Record<Conversation['status'], React.ReactElement> = {
-  open: (
-    <Badge variant="success" dot>
-      Open
-    </Badge>
-  ),
-  pending: (
-    <Badge variant="warning" dot>
-      Pending
-    </Badge>
-  ),
-  resolved: (
-    <Badge variant="default" dot>
-      Resolved
-    </Badge>
-  ),
-};
 
 type WsBannerConfig = {
   show: boolean;
@@ -152,7 +141,6 @@ export function ChatWindow({
   wsStatus,
   linkedOrder,
   onViewOrderDetails,
-  onMarkResolved,
   onBack,
   staff = [],
   currentUserId,
@@ -171,12 +159,21 @@ export function ChatWindow({
   isCreatingOrder = false,
   onConfirmOrder,
   isConfirmingOrder = false,
+  onMarkOrderPaid,
+  isMarkingOrderPaid = false,
+  orderIndex = 0,
+  totalOrders = 1,
+  onPrevOrder,
+  onNextOrder,
 }: Readonly<ChatWindowProps>) {
-  const { id, customerName, customerIdentifier, status, assignedTo } = conversation;
+  const { id, customerName, customerIdentifier, assignedTo } = conversation;
   const messages = messagesProp ?? conversation.messages;
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [orderCollapsed, setOrderCollapsed] = useState(false);
+  const [orderCollapsed, setOrderCollapsed] = useState(true);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+
+  // Collapse the card whenever the displayed order changes
+  useEffect(() => { setOrderCollapsed(true); }, [linkedOrder?.id]);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [orderSourceMessage, setOrderSourceMessage] = useState<string | null>(null);
 
@@ -304,8 +301,6 @@ export function ChatWindow({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {statusBadge[status]}
-
           {/* Assignment control */}
           {onAssign && (
             <AssignmentPanel
@@ -359,27 +354,7 @@ export function ChatWindow({
             </button>
           )}
 
-          {status !== 'resolved' && onMarkResolved && (
-            <button
-              type="button"
-              onClick={() => onMarkResolved(id)}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-              style={{
-                color: 'var(--ds-text-secondary)',
-                border: '1px solid var(--ds-border-base)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--ds-bg-hover)';
-                e.currentTarget.style.color = 'var(--ds-text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '';
-                e.currentTarget.style.color = 'var(--ds-text-secondary)';
-              }}
-            >
-              Mark resolved
-            </button>
-          )}
+
         </div>
       </div>
 
@@ -502,13 +477,20 @@ export function ChatWindow({
           onMarkAsCredit={onMarkAsCredit}
           onConfirm={onConfirmOrder}
           isConfirming={isConfirmingOrder}
+          onAddDetails={onCreateOrder ? () => { setOrderSourceMessage(null); setOrderModalOpen(true); } : undefined}
+          onMarkPaid={onMarkOrderPaid}
+          isMarkingPaid={isMarkingOrderPaid}
+          orderIndex={orderIndex}
+          totalOrders={totalOrders}
+          onPrevOrder={onPrevOrder}
+          onNextOrder={onNextOrder}
         />
       )}
 
       {/* ── Message input ────────────────────────────────────── */}
       <ChatInput
         onSend={(content) => onSendMessage(id, content)}
-        disabled={status === 'resolved'}
+        disabled={false}
         isSending={isSending}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}

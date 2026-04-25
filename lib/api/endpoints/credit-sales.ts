@@ -66,6 +66,12 @@ export const creditSalesApi = {
       .then(mapCreditSale);
   },
 
+  writeOff(id: string, signal?: AbortSignal): Promise<CreditSale> {
+    return apiClient
+      .post<CreditSaleOut>(`${BASE}/${encodeURIComponent(id)}/write-off`, {}, undefined, signal)
+      .then(mapCreditSale);
+  },
+
   remind(id: string, signal?: AbortSignal): Promise<ReminderOut> {
     return apiClient.post<ReminderOut>(
       `${BASE}/${encodeURIComponent(id)}/remind`,

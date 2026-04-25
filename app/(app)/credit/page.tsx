@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCreditSales, useSettleCreditSale, useDisputeCreditSale, useSendCreditReminder } from '@/hooks/useCreditSales';
+import { useCreditSales, useSettleCreditSale, useDisputeCreditSale, useWriteOffCreditSale, useSendCreditReminder } from '@/hooks/useCreditSales';
 import type { CreditSale, CreditSaleStatus } from '@/store';
 
 const STATUS_STYLES: Record<CreditSaleStatus, { bg: string; text: string; label: string }> = {
@@ -30,6 +30,7 @@ function daysSince(dateStr: string): number {
 function CreditRow({ sale }: { sale: CreditSale }) {
   const { mutate: settle, isPending: isSettling } = useSettleCreditSale();
   const { mutate: dispute, isPending: isDisputing } = useDisputeCreditSale();
+  const { mutate: writeOff, isPending: isWritingOff } = useWriteOffCreditSale();
   const { mutate: remind, isPending: isReminding } = useSendCreditReminder();
 
   const style = STATUS_STYLES[sale.status];
@@ -100,6 +101,18 @@ function CreditRow({ sale }: { sale: CreditSale }) {
               }}
             >
               {isDisputing ? '…' : 'Dispute'}
+            </button>
+            <button
+              type="button"
+              onClick={() => writeOff(sale.id)}
+              disabled={isWritingOff}
+              className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+              style={{
+                color: 'var(--ds-text-tertiary)',
+                border: '1px solid var(--ds-border-base)',
+              }}
+            >
+              {isWritingOff ? '…' : 'Write off'}
             </button>
           </div>
         )}

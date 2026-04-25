@@ -219,7 +219,7 @@ function BubbleToolbar({
   onCreateOrder,
 }: Readonly<BubbleToolbarProps>) {
   // Toolbar appears on the opposite side of the bubble alignment
-  const sideClass = isOutgoing ? 'order-first mr-1' : 'order-last ml-1';
+  const sideClass = isOutgoing ? 'order-last' : 'order-last ml-1';
 
   return (
     <div
