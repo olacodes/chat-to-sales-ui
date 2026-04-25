@@ -18,7 +18,9 @@ import {
   useCancelScheduledMessage,
 } from '@/hooks/useConversations';
 import { useCreditSales, useCreateCreditSale, useSendCreditReminder } from '@/hooks/useCreditSales';
+import { useCreateAndConfirmOrder, useConfirmOrder } from '@/hooks/useOrders';
 import type { StaffMember } from '@/store';
+import type { CreateOrderPayload } from '@/lib/api/types';
 
 const LAST_CONVERSATION_KEY = 'lastConversationId';
 
@@ -74,6 +76,9 @@ export default function ConversationPage() {
 
   const activeCreditSale = creditSales.find((c) => c.conversationId === id) ?? null;
   const hasActiveCreditSale = Boolean(linkedOrder && creditSales.some((c) => c.orderId === linkedOrder.id));
+
+  const { mutate: createOrder, isPending: isCreatingOrder } = useCreateAndConfirmOrder();
+  const { mutate: confirmOrder, isPending: isConfirmingOrder } = useConfirmOrder();
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -141,6 +146,14 @@ export default function ConversationPage() {
     sendCreditReminder(creditSaleId);
   }
 
+  function handleCreateOrder(payload: CreateOrderPayload) {
+    createOrder(payload);
+  }
+
+  function handleConfirmOrder(orderId: string) {
+    confirmOrder(orderId);
+  }
+
   function handleBack() {
     router.push('/conversations');
   }
@@ -189,6 +202,10 @@ export default function ConversationPage() {
       isSendingReminder={isSendingReminder}
       onMarkAsCredit={handleMarkAsCredit}
       hasActiveCreditSale={hasActiveCreditSale}
+      onCreateOrder={handleCreateOrder}
+      isCreatingOrder={isCreatingOrder}
+      onConfirmOrder={handleConfirmOrder}
+      isConfirmingOrder={isConfirmingOrder}
     />
   );
 }

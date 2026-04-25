@@ -181,6 +181,9 @@ interface InlineOrderCardProps {
   hasActiveCreditSale?: boolean;
   /** Called when the agent marks this order as a credit sale */
   onMarkAsCredit?: (orderId: string, amount: number) => void;
+  /** Called when the agent confirms an inquiry order */
+  onConfirm?: (orderId: string) => void;
+  isConfirming?: boolean;
 }
 
 export function InlineOrderCard({
@@ -190,6 +193,8 @@ export function InlineOrderCard({
   onToggleCollapse,
   hasActiveCreditSale = false,
   onMarkAsCredit,
+  onConfirm,
+  isConfirming = false,
 }: Readonly<InlineOrderCardProps>) {
   const { id, status, total, currency, items } = order;
   const style = STATUS_STYLES[status];
@@ -250,6 +255,23 @@ export function InlineOrderCard({
           >
             {formatAmount(total, currency)}
           </span>
+
+          {/* Confirm — only for inquiry orders */}
+          {onConfirm && status === 'inquiry' && (
+            <button
+              type="button"
+              onClick={() => onConfirm(id)}
+              disabled={isConfirming}
+              className="text-[10px] font-medium px-2 py-1 rounded-lg transition-colors disabled:opacity-50"
+              style={{ color: 'var(--ds-brand-text)' }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = 'var(--ds-brand-bg-soft)')
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
+            >
+              {isConfirming ? 'Confirming…' : 'Confirm Order'}
+            </button>
+          )}
 
           {/* Mark as credit sale — only for confirmed/completed orders without an existing credit sale */}
           {onMarkAsCredit && !hasActiveCreditSale && (status === 'confirmed' || status === 'completed') && (

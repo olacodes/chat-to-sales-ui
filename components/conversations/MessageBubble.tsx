@@ -116,6 +116,8 @@ interface MessageBubbleProps {
   currentUserId?: string | null;
   /** Resolved agent name for assistant messages — derived from the staff list by the caller. */
   agentName?: string | null;
+  /** Called when the agent taps "Create Order from this message". Customer messages only. */
+  onCreateOrder?: (messageContent: string) => void;
 }
 
 /* ── Delivery indicator ──────────────────────────────────────── */
@@ -205,6 +207,7 @@ interface BubbleToolbarProps {
   onReply: () => void;
   onEmojiClick: () => void;
   emojiButtonRef: React.RefObject<HTMLButtonElement | null>;
+  onCreateOrder?: () => void;
 }
 
 function BubbleToolbar({
@@ -213,6 +216,7 @@ function BubbleToolbar({
   onReply,
   onEmojiClick,
   emojiButtonRef,
+  onCreateOrder,
 }: Readonly<BubbleToolbarProps>) {
   // Toolbar appears on the opposite side of the bubble alignment
   const sideClass = isOutgoing ? 'order-first mr-1' : 'order-last ml-1';
@@ -253,6 +257,23 @@ function BubbleToolbar({
           />
         </svg>
       </ToolbarButton>
+      {onCreateOrder && (
+        <ToolbarButton label="Create Order from this message" onClick={onCreateOrder}>
+          <svg
+            className="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
+          </svg>
+        </ToolbarButton>
+      )}
       <ToolbarButton label="Copy" onClick={onCopy}>
         <svg
           className="h-3.5 w-3.5"
@@ -289,6 +310,7 @@ export function MessageBubble({
   onReact,
   currentUserId,
   agentName,
+  onCreateOrder,
 }: Readonly<MessageBubbleProps>) {
   const { role, content, timestamp, reactions } = message;
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
@@ -356,6 +378,11 @@ export function MessageBubble({
         onReply={handleReply}
         onEmojiClick={() => setPickerOpen((prev) => !prev)}
         emojiButtonRef={emojiButtonRef}
+        onCreateOrder={
+          !isOutgoing && onCreateOrder
+            ? () => onCreateOrder(content)
+            : undefined
+        }
       />
 
       {/* Bubble + meta column */}

@@ -7,8 +7,10 @@ import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { InlineOrderCard } from './InlineOrderCard';
 import { AssignmentPanel } from './AssignmentPanel';
+import { CreateOrderModal } from './CreateOrderModal';
 import { Badge } from '@/components/ui/Badge';
 import { formatScheduledTime } from '@/lib/utils/snoozePresets';
+import type { CreateOrderPayload } from '@/lib/api/types';
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -58,6 +60,12 @@ interface ChatWindowProps {
   /** Called when the agent marks the linked order as a credit sale */
   onMarkAsCredit?: (orderId: string, amount: number) => void;
   hasActiveCreditSale?: boolean;
+  /** Called when the agent submits the Create Order form */
+  onCreateOrder?: (payload: CreateOrderPayload) => void;
+  isCreatingOrder?: boolean;
+  /** Called when the agent confirms an inquiry order from the inline card */
+  onConfirmOrder?: (orderId: string) => void;
+  isConfirmingOrder?: boolean;
 }
 
 const statusBadge: Record<Conversation['status'], React.ReactElement> = {
@@ -159,12 +167,18 @@ export function ChatWindow({
   isSendingReminder = false,
   onMarkAsCredit,
   hasActiveCreditSale = false,
+  onCreateOrder,
+  isCreatingOrder = false,
+  onConfirmOrder,
+  isConfirmingOrder = false,
 }: Readonly<ChatWindowProps>) {
   const { id, customerName, customerIdentifier, status, assignedTo } = conversation;
   const messages = messagesProp ?? conversation.messages;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [orderCollapsed, setOrderCollapsed] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [orderSourceMessage, setOrderSourceMessage] = useState<string | null>(null);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -206,6 +220,14 @@ export function ChatWindow({
           onReact={
             onReact
               ? (emoji) => onReact(id, msg.id, emoji)
+              : undefined
+          }
+          onCreateOrder={
+            onCreateOrder
+              ? (content) => {
+                  setOrderSourceMessage(content);
+                  setOrderModalOpen(true);
+                }
               : undefined
           }
         />
@@ -293,6 +315,26 @@ export function ChatWindow({
               isAssigning={isAssigning}
               onAssign={(userId, staffMember) => onAssign(id, userId, staffMember)}
             />
+          )}
+
+          {onCreateOrder && (
+            <button
+              type="button"
+              onClick={() => {
+                setOrderSourceMessage(null);
+                setOrderModalOpen(true);
+              }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: 'var(--ds-brand-text)',
+                border: '1px solid var(--ds-brand-border)',
+                backgroundColor: 'var(--ds-brand-bg-soft)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              + Create Order
+            </button>
           )}
 
           {activeCreditSale && onSendReminder && (
@@ -458,6 +500,8 @@ export function ChatWindow({
           onToggleCollapse={() => setOrderCollapsed((prev) => !prev)}
           hasActiveCreditSale={hasActiveCreditSale}
           onMarkAsCredit={onMarkAsCredit}
+          onConfirm={onConfirmOrder}
+          isConfirming={isConfirmingOrder}
         />
       )}
 
@@ -470,6 +514,23 @@ export function ChatWindow({
         onCancelReply={() => setReplyTo(null)}
         onSchedule={onScheduleMessage ? (content, scheduledFor) => onScheduleMessage(id, content, scheduledFor) : undefined}
       />
+
+      {/* ── Create Order modal ───────────────────────────────────── */}
+      {onCreateOrder && (
+        <CreateOrderModal
+          isOpen={orderModalOpen}
+          onClose={() => setOrderModalOpen(false)}
+          onSubmit={(payload) => {
+            onCreateOrder(payload);
+            setOrderModalOpen(false);
+          }}
+          isSubmitting={isCreatingOrder}
+          customerName={customerName}
+          customerIdentifier={customerIdentifier}
+          conversationId={id}
+          sourceMessage={orderSourceMessage}
+        />
+      )}
     </div>
   );
 }
