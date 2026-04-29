@@ -36,7 +36,7 @@ export default async function StorePage({ params }: PageProps) {
   const store = await getStore(slug);
   if (!store) notFound();
 
-  const whatsappUrl = `https://wa.me/${store.phone_number}`;
+  const whatsappUrl = store.ordering_whatsapp_url;
 
   return (
     <div style={{ backgroundColor: 'var(--ds-bg-base)', minHeight: '100vh' }}>

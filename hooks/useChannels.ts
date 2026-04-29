@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { channelsApi } from '@/lib/api/endpoints/channels';
-import { apiClient, ApiError } from '@/lib/api/client';
 import { getTenantId } from '@/lib/auth/tokenStore';
 import type { EmbeddedSignupSession } from '@/lib/hooks/useMetaEmbeddedSignup';
 
@@ -24,12 +23,12 @@ export function useChannels() {
   });
 }
 
-/** Connect a WhatsApp Business account from the settings page. */
+/** Connect a WhatsApp Business account from the settings page via Embedded Signup. */
 export function useConnectWhatsApp() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (session: EmbeddedSignupSession) =>
-      apiClient.post('/api/v1/channels/whatsapp/connect', {
+      channelsApi.connectFromEmbeddedSignup({
         tenant_id: getTenantId() ?? '',
         code: session.code,
         phone_number_id: session.phone_number_id,

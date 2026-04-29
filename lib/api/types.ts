@@ -261,7 +261,9 @@ export interface TraderStoreOut {
   business_name: string;
   business_category: string;
   store_slug: string;
-  phone_number: string;
+  /** Full wa.me URL for the Order on WhatsApp button. Points to the platform
+   *  number (Phase 1) or the trader's own connected number (Phase 2). */
+  ordering_whatsapp_url: string;
   catalogue: CatalogueItemOut[];
 }
 
