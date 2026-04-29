@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { wsConnection } from '@/lib/websocket/connection';
@@ -15,7 +15,9 @@ import type {
   PaymentConfirmedPayload,
   ConversationCreatedPayload,
   ConversationUpdatedPayload,
+  TraderOnboardedPayload,
 } from '@/lib/websocket/events';
+import { TraderOnboardedToast } from '@/components/layout/TraderOnboardedToast';
 import type { Conversation, Message, Order, Payment, StaffMember } from '@/store';
 import type { PagedOut } from '@/lib/api/types';
 
@@ -81,6 +83,7 @@ function patchConversation(
 export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const qc = useQueryClient();
   const tenantId = useAuthStore((s) => s.tenantId) ?? '';
+  const [storeToast, setStoreToast] = useState<{ businessName: string; slug: string } | null>(null);
 
   useEffect(() => {
     wsConnection.connect(tenantId);
@@ -353,6 +356,16 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       },
     );
 
+    // ── trader.onboarded ──────────────────────────────────────────────────────
+    const unsubTraderOnboarded = wsConnection.onMessage<TraderOnboardedPayload>(
+      'trader.onboarded',
+      (msg) => {
+        const p = msg.payload;
+        log('trader.onboarded', { slug: p.store_slug, name: p.business_name });
+        setStoreToast({ businessName: p.business_name, slug: p.store_slug });
+      },
+    );
+
     return () => {
       unsubMessage();
       unsubOrderUpdated();
@@ -362,9 +375,21 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       unsubConvUpdated();
       unsubConvClosed();
       unsubConvAssigned();
+      unsubTraderOnboarded();
       wsConnection.disconnect();
     };
   }, [tenantId, qc]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {storeToast && (
+        <TraderOnboardedToast
+          businessName={storeToast.businessName}
+          slug={storeToast.slug}
+          onDismiss={() => setStoreToast(null)}
+        />
+      )}
+    </>
+  );
 }

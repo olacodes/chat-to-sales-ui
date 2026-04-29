@@ -250,6 +250,21 @@ export interface InboundWebhookPayload {
   tenant_id: string;
 }
 
+// ─── Store (public trader storefront) ────────────────────────────────────────
+
+export interface CatalogueItemOut {
+  name: string;
+  price: number;
+}
+
+export interface TraderStoreOut {
+  business_name: string;
+  business_category: string;
+  store_slug: string;
+  phone_number: string;
+  catalogue: CatalogueItemOut[];
+}
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 /**

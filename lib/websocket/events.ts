@@ -127,6 +127,14 @@ export interface MessageReactionUpdatedPayload {
   reactions: ReactionUpdatedItem[];
 }
 
+// ─── trader.onboarded ─────────────────────────────────────────────────────────
+
+export interface TraderOnboardedPayload {
+  business_name: string;
+  store_slug: string;
+  phone_number: string;
+}
+
 // ─── Discriminated union ──────────────────────────────────────────────────────
 
 export type RealtimeEventType =
@@ -139,7 +147,8 @@ export type RealtimeEventType =
   | 'conversation.updated'
   | 'conversation.closed'
   | 'conversation.assigned'
-  | 'message.reaction_updated';
+  | 'message.reaction_updated'
+  | 'trader.onboarded';
 
 export type RealtimeEventPayload =
   | { type: 'message.received'; payload: MessageReceivedPayload }
@@ -150,4 +159,5 @@ export type RealtimeEventPayload =
   | { type: 'conversation.updated'; payload: ConversationUpdatedPayload }
   | { type: 'conversation.closed'; payload: ConversationUpdatedPayload }
   | { type: 'conversation.assigned'; payload: ConversationAssignedPayload }
-  | { type: 'message.reaction_updated'; payload: MessageReactionUpdatedPayload };
+  | { type: 'message.reaction_updated'; payload: MessageReactionUpdatedPayload }
+  | { type: 'trader.onboarded'; payload: TraderOnboardedPayload };
