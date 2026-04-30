@@ -89,7 +89,7 @@ export function ChannelsSection() {
                 reset();
                 if (!whatsappConnected) launch();
               }}
-              disabled={whatsappBusy || sdkStatus === 'error'}
+              disabled={whatsappConnected || whatsappBusy || sdkStatus === 'error'}
               className="group flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               style={{
                 borderColor: whatsappConnected
