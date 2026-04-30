@@ -165,12 +165,15 @@ export function Sidebar({ isOpen, onClose }: Readonly<SidebarProps>) {
   const user = useAuthStore((s) => s.user);
 
   const email = user?.email ?? '';
-  const displayName = email
-    .split('@')[0]
-    .replaceAll('.', ' ')
-    .replaceAll('_', ' ')
-    .replaceAll(/\b\w/g, (c) => c.toUpperCase());
-  const letters = (displayName.slice(0, 2) || email.slice(0, 2)).toUpperCase() || 'U';
+  const isSynthetic = email.includes('@wa.chattosales');
+  const displayName = isSynthetic
+    ? `+${email.split('@')[0]}`
+    : email
+        .split('@')[0]
+        .replaceAll('.', ' ')
+        .replaceAll('_', ' ')
+        .replaceAll(/\b\w/g, (c) => c.toUpperCase());
+  const letters = (displayName.replace('+', '').slice(0, 2) || 'U').toUpperCase();
 
   function handleLogout() {
     logout();

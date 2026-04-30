@@ -47,6 +47,9 @@ const GENERIC_MAIL_DOMAINS = new Set([
  * - Generic mailer: bob@gmail.com        →  "Bob"
  */
 function businessNameFromEmail(email: string): string {
+  if (email.includes('@wa.chattosales')) {
+    return '';  // Phone-only user — TenantSwitcher will fall back to 'My Workspace'
+  }
   const [prefix = '', domain = ''] = email.split('@');
   const raw = GENERIC_MAIL_DOMAINS.has(domain.toLowerCase()) ? prefix : (domain.split('.')[0] ?? prefix);
   return raw
@@ -115,8 +118,18 @@ function TenantSwitcher() {
 
 /* ── User menu with dropdown ─────────────────────────────────── */
 
+/** True if this is a synthetic email for a phone-only (WhatsApp) user. */
+function isSyntheticEmail(email: string): boolean {
+  return email.includes('@wa.chattosales');
+}
+
 /** Derive a readable display name from an email address. */
 function nameFromEmail(email: string): string {
+  if (isSyntheticEmail(email)) {
+    // Phone-only user — show formatted phone number instead of synthetic email
+    const phone = email.split('@')[0] ?? '';
+    return phone ? `+${phone}` : '';
+  }
   const prefix = email.split('@')[0] ?? '';
   return prefix
     .replaceAll('.', ' ')
@@ -216,7 +229,7 @@ function UserMenu() {
               {displayName || 'User'}
             </p>
             <p className="text-[11px] truncate" style={{ color: 'var(--ds-text-tertiary)' }}>
-              {email}
+              {isSyntheticEmail(email) ? `+${email.split('@')[0]}` : email}
             </p>
           </div>
           {/* Actions */}
