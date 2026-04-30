@@ -46,6 +46,7 @@ export const channelsApi = {
     return apiClient.post<WhatsAppConnectResponse>(
       `${BASE}/channels/whatsapp/embedded-signup`,
       payload,
+      undefined,
       signal,
     );
   },
