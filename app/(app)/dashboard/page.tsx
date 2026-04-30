@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { SystemStatusCard } from '@/components/dashboard/SystemStatusCard';
@@ -137,6 +138,24 @@ export default function DashboardPage() {
   const activeConvs       = overview?.activeConversations ?? 0;
   const conversionRate    = overview?.conversionRate    ?? 0;
 
+  // ── WABA banner eligibility ────────────────────────────────────────────────
+  // Show only after: first order received, OR 3+ days since signup, OR visited settings
+  const [bannerEligible, setBannerEligible] = useState(false);
+
+  useEffect(() => {
+    try {
+      const ts = localStorage.getItem('cts-signup-ts');
+      const daysSince = ts ? (Date.now() - Number(ts)) / (1000 * 60 * 60 * 24) : 0;
+      const visitedSettings = localStorage.getItem('cts-visited-settings') === '1';
+      setBannerEligible(daysSince >= 3 || visitedSettings);
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
+  const showWabaBanner =
+    !channelsLoading && !whatsappConnected && (bannerEligible || totalOrders > 0);
+
   return (
     <div className="space-y-6">
 
@@ -207,41 +226,41 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* WhatsApp connect prompt — shown until the trader connects their own number */}
-      {!channelsLoading && !whatsappConnected && (
+      {/* WhatsApp connect prompt — shown after milestones, not on day one */}
+      {showWabaBanner && (
         <div
-          className="flex items-center justify-between gap-4 rounded-xl px-5 py-4"
+          className="relative overflow-hidden rounded-xl px-5 py-5"
           style={{
-            background: 'linear-gradient(135deg, var(--ds-success-bg) 0%, var(--ds-bg-surface) 100%)',
-            border: '1px solid var(--ds-success-border, var(--ds-border-base))',
+            background: 'linear-gradient(135deg, #dcfce7 0%, #f0fdf4 40%, var(--ds-bg-surface) 100%)',
+            border: '1px solid #bbf7d0',
           }}
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-              style={{ backgroundColor: 'var(--ds-success-bg)' }}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/80 shadow-sm">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" style={{ fill: '#25D366' }} aria-hidden="true">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                  <path d="M12.004 2C6.479 2 2 6.479 2 12.004c0 1.868.518 3.614 1.42 5.113L2 22l5.01-1.391A9.946 9.946 0 0 0 12.004 22C17.525 22 22 17.521 22 12.004 22 6.479 17.525 2 12.004 2zm0 18.16a8.12 8.12 0 0 1-4.178-1.15l-.299-.178-3.094.858.874-3.02-.194-.31a8.144 8.144 0 0 1-1.269-4.356c0-4.512 3.672-8.184 8.184-8.184 4.51 0 8.18 3.672 8.18 8.184 0 4.511-3.67 8.157-8.204 8.157z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold" style={{ color: '#166534' }}>
+                  Ready for your own WhatsApp number?
+                </p>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: '#15803d' }}>
+                  Customers will message you directly — no shared line, faster replies, more trust.
+                  Takes about 2 minutes to set up.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/settings"
+              className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold shadow-sm transition-all hover:shadow-md hover:brightness-105 active:scale-[0.98]"
+              style={{ backgroundColor: '#25D366', color: '#fff' }}
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" style={{ fill: 'var(--ds-success-text)' }} aria-hidden="true">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                <path d="M12.004 2C6.479 2 2 6.479 2 12.004c0 1.868.518 3.614 1.42 5.113L2 22l5.01-1.391A9.946 9.946 0 0 0 12.004 22C17.525 22 22 17.521 22 12.004 22 6.479 17.525 2 12.004 2zm0 18.16a8.12 8.12 0 0 1-4.178-1.15l-.299-.178-3.094.858.874-3.02-.194-.31a8.144 8.144 0 0 1-1.269-4.356c0-4.512 3.672-8.184 8.184-8.184 4.51 0 8.18 3.672 8.18 8.184 0 4.511-3.67 8.157-8.204 8.157z" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
-                Connect your WhatsApp number
-              </p>
-              <p className="mt-0.5 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
-                Let customers order directly from your number — no middleman.
-              </p>
-            </div>
+              Connect my number
+            </Link>
           </div>
-          <Link
-            href="/settings"
-            className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
-            style={{ backgroundColor: '#25D366', color: '#fff' }}
-          >
-            Connect →
-          </Link>
         </div>
       )}
 

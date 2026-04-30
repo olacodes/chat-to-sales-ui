@@ -1,10 +1,16 @@
 'use client';
 
+import { useEffect } from 'react';
 import { WeeklyReportCard } from '@/components/reports/WeeklyReportCard';
 import { TeamSection } from '@/components/settings/TeamSection';
 import { ChannelsSection } from '@/components/settings/ChannelsSection';
 
 export default function SettingsPage() {
+  // Mark that the trader has visited settings — enables the WABA connect banner on dashboard
+  useEffect(() => {
+    try { localStorage.setItem('cts-visited-settings', '1'); } catch {}
+  }, []);
+
   return (
     <div className="max-w-2xl space-y-6">
       <div>

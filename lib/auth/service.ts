@@ -46,9 +46,22 @@ function applySession(data: AuthResponse): AuthSession {
     accessToken: data.access_token,
     user: data.user,
     tenantId: data.tenant_id,
+    ...(data.store_slug && { storeSlug: data.store_slug }),
   };
 
   persistSession(session);
+
+  // Record first web session timestamp (used for upgrade banner eligibility)
+  try {
+    if (!localStorage.getItem('cts-signup-ts')) {
+      localStorage.setItem('cts-signup-ts', String(Date.now()));
+    }
+    if (data.store_slug) {
+      sessionStorage.setItem('cts-store-slug', data.store_slug);
+    }
+  } catch {
+    // localStorage/sessionStorage unavailable — no-op
+  }
 
   useAuthStore.getState().setSession(session);
   return session;
@@ -90,6 +103,14 @@ export async function verifyOtp(phoneNumber: string, code: string): Promise<Auth
     code,
   });
   return applySession(data);
+}
+
+export async function signupWithPhone(payload: {
+  phone_number: string;
+  business_name: string;
+  business_category: string;
+}): Promise<void> {
+  await apiClient.post('/api/v1/auth/signup/phone', payload);
 }
 
 export function logout(): void {
