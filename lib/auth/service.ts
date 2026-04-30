@@ -80,6 +80,18 @@ export async function loginWithGoogle(idToken: string): Promise<AuthSession> {
   return applySession(data);
 }
 
+export async function requestOtp(phoneNumber: string): Promise<void> {
+  await apiClient.post('/api/v1/auth/otp/request', { phone_number: phoneNumber });
+}
+
+export async function verifyOtp(phoneNumber: string, code: string): Promise<AuthSession> {
+  const data = await apiClient.post<AuthResponse>('/api/v1/auth/otp/verify', {
+    phone_number: phoneNumber,
+    code,
+  });
+  return applySession(data);
+}
+
 export function logout(): void {
   eraseSession();
   useAuthStore.getState().clearSession();
