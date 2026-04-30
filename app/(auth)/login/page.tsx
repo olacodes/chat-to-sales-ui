@@ -53,8 +53,8 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 'email' | 'phone' | 'otp'
-  const [mode, setMode] = useState<'email' | 'phone' | 'otp'>('email');
+  // 'phone' | 'email' | 'otp'
+  const [mode, setMode] = useState<'phone' | 'email' | 'otp'>('phone');
   const [pendingPhone, setPendingPhone] = useState('');
 
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -192,6 +192,51 @@ function LoginForm() {
           </p>
         </div>
 
+        {/* WhatsApp phone number mode (default) */}
+        {mode === 'phone' && (
+          <>
+            <form className="space-y-4" onSubmit={onPhoneSubmit} noValidate>
+              <Input
+                type="tel"
+                label="WhatsApp phone number"
+                placeholder="2348012345678"
+                autoComplete="tel"
+                error={phoneForm.formState.errors.phone_number?.message}
+                {...phoneForm.register('phone_number')}
+              />
+              <p className="text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
+                Enter the number you used to register on WhatsApp. Include your country code.
+              </p>
+
+              {submitError && (
+                <p className="rounded-lg px-3 py-2 text-sm"
+                  style={{ backgroundColor: 'var(--ds-danger-bg)', color: 'var(--ds-danger-text)' }}>
+                  {submitError}
+                </p>
+              )}
+
+              <Button type="submit" className="w-full" loading={phoneForm.formState.isSubmitting}>
+                Send code
+              </Button>
+            </form>
+
+            <div className="mt-4 flex items-center gap-3">
+              <div className="h-px flex-1" style={{ backgroundColor: 'var(--ds-border-base)' }} />
+              <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>or</span>
+              <div className="h-px flex-1" style={{ backgroundColor: 'var(--ds-border-base)' }} />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setSubmitError(null); setMode('email'); }}
+              className="mt-4 w-full rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:opacity-80"
+              style={{ borderColor: 'var(--ds-border-base)', color: 'var(--ds-text-primary)' }}
+            >
+              Sign in with email instead
+            </button>
+          </>
+        )}
+
         {/* Email/password mode */}
         {mode === 'email' && (
           <>
@@ -236,57 +281,15 @@ function LoginForm() {
               </Button>
             </form>
 
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-px flex-1" style={{ backgroundColor: 'var(--ds-border-base)' }} />
-              <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>or</span>
-              <div className="h-px flex-1" style={{ backgroundColor: 'var(--ds-border-base)' }} />
-            </div>
-
             <button
               type="button"
               onClick={() => { setSubmitError(null); setMode('phone'); }}
-              className="mt-4 w-full rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:opacity-80"
-              style={{ borderColor: 'var(--ds-border-base)', color: 'var(--ds-text-primary)' }}
-            >
-              Sign in with WhatsApp number
-            </button>
-          </>
-        )}
-
-        {/* Phone number mode */}
-        {mode === 'phone' && (
-          <form className="space-y-4" onSubmit={onPhoneSubmit} noValidate>
-            <Input
-              type="tel"
-              label="WhatsApp phone number"
-              placeholder="2348012345678"
-              autoComplete="tel"
-              error={phoneForm.formState.errors.phone_number?.message}
-              {...phoneForm.register('phone_number')}
-            />
-            <p className="text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
-              Enter the number you used to register on WhatsApp. Include your country code.
-            </p>
-
-            {submitError && (
-              <p className="rounded-lg px-3 py-2 text-sm"
-                style={{ backgroundColor: 'var(--ds-danger-bg)', color: 'var(--ds-danger-text)' }}>
-                {submitError}
-              </p>
-            )}
-
-            <Button type="submit" className="w-full" loading={phoneForm.formState.isSubmitting}>
-              Send code
-            </Button>
-            <button
-              type="button"
-              onClick={() => { setSubmitError(null); setMode('email'); }}
-              className="w-full text-center text-sm"
+              className="mt-4 w-full text-center text-sm"
               style={{ color: 'var(--ds-text-secondary)' }}
             >
-              Back to email login
+              Back to WhatsApp login
             </button>
-          </form>
+          </>
         )}
 
         {/* OTP verification mode */}
