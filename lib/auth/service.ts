@@ -13,7 +13,7 @@
 
 import { apiClient } from '@/lib/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
-import type { AuthResponse, AuthSession } from './types';
+import type { AuthResponse, AuthSession, TraderInvite } from './types';
 
 // ─── Session persistence keys ─────────────────────────────────────────────────
 
@@ -103,6 +103,14 @@ export async function verifyOtp(phoneNumber: string, code: string): Promise<Auth
     code,
   });
   return applySession(data);
+}
+
+/**
+ * Validate a trader outreach token and return the pre-filled phone number.
+ * Used on /join/[token] — unauthenticated, no session needed.
+ */
+export async function getTraderInvite(token: string): Promise<TraderInvite> {
+  return apiClient.get<TraderInvite>(`/api/v1/auth/invite/trader/${encodeURIComponent(token)}`);
 }
 
 export async function signupWithPhone(payload: {

@@ -1,6 +1,14 @@
 export interface AuthUser {
   user_id: string;
-  email: string;
+  /** Present for email-based accounts; absent for phone-only traders */
+  email?: string;
+  phone_number?: string;
+}
+
+/** Returned by GET /api/v1/auth/invite/trader/{token} */
+export interface TraderInvite {
+  phone_number: string;
+  referrer_name?: string;
 }
 
 export interface AuthSession {
