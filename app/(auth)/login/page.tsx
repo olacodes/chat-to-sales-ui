@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -53,14 +53,44 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 'phone' | 'email' | 'otp'
-  const [mode, setMode] = useState<'phone' | 'email' | 'otp'>('phone');
+  // 'phone' | 'email' | 'otp' | 'magic'
+  const [mode, setMode] = useState<'phone' | 'email' | 'otp' | 'magic'>('phone');
   const [pendingPhone, setPendingPhone] = useState('');
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const submittingRef = useRef(false);
+
+  // ── Magic link auto-verify ────────────────────────────────────────────────
+  // When the URL has ?code=123456&phone=234... (from the WhatsApp login link),
+  // auto-submit verification without any user interaction.
+  const magicCode = searchParams.get('code');
+  const magicPhone = searchParams.get('phone');
+
+  useEffect(() => {
+    if (!magicCode || !magicPhone || magicCode.length !== 6) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setMode('magic');
+    setSubmitError(null);
+
+    verifyOtp(magicPhone, magicCode)
+      .then(() => {
+        setIsSuccess(true);
+        // Use ?next= if present, otherwise dashboard
+        const next = searchParams.get('next');
+        const dest = next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+        setTimeout(() => router.push(dest), 700);
+      })
+      .catch((err) => {
+        setSubmitError(getErrorMessage(err, 'This login link is invalid or expired. Request a new one.'));
+        setMode('phone');
+      })
+      .finally(() => {
+        submittingRef.current = false;
+      });
+  }, [magicCode, magicPhone, router, searchParams]);
 
   function getNextUrl() {
     const next = searchParams.get('next');
@@ -186,11 +216,44 @@ function LoginForm() {
             Welcome back
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
-            {mode === 'otp'
-              ? `Enter the code sent to +${pendingPhone}`
-              : 'Sign in to your ChatToSales account'}
+            {mode === 'magic'
+              ? 'Verifying your login link...'
+              : mode === 'otp'
+                ? `Enter the code sent to +${pendingPhone}`
+                : 'Sign in to your ChatToSales account'}
           </p>
         </div>
+
+        {/* Magic link auto-verify */}
+        {mode === 'magic' && (
+          <div className="flex flex-col items-center py-4 text-center">
+            <svg
+              className="h-7 w-7 animate-spin mb-4"
+              style={{ color: 'var(--ds-brand-text)' }}
+              fill="none"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            {isSuccess ? (
+              <p
+                className="text-sm font-medium"
+                style={{ color: 'var(--ds-success-text)' }}
+              >
+                Signed in! Redirecting...
+              </p>
+            ) : (
+              <p
+                className="text-sm"
+                style={{ color: 'var(--ds-text-secondary)' }}
+              >
+                Signing you in...
+              </p>
+            )}
+          </div>
+        )}
 
         {/* WhatsApp phone number mode (default) */}
         {mode === 'phone' && (
