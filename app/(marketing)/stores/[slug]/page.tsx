@@ -8,7 +8,7 @@ import { StoreCatalogue } from './StoreCatalogue';
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
 async function getStore(slug: string): Promise<TraderStoreOut | null> {
-  const res = await fetch(`${BASE_URL}/api/v1/store/${encodeURIComponent(slug)}`, {
+  const res = await fetch(`${BASE_URL}/api/v1/stores/${encodeURIComponent(slug)}`, {
     next: { revalidate: 60 },
   });
   if (res.status === 404) return null;
@@ -41,7 +41,7 @@ export default async function StorePage({ params }: PageProps) {
     <div style={{ backgroundColor: 'var(--ds-bg-base)', minHeight: '100vh' }}>
       <Navbar />
 
-      <main className="mx-auto max-w-2xl px-4 py-12">
+      <main className="mx-auto max-w-2xl px-4 pt-24 pb-12">
 
         {/* ── Store header ─────────────────────────────────────────────────── */}
         <div

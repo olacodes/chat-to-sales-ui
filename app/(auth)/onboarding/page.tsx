@@ -17,9 +17,9 @@ function getStoreSlug(): string | null {
 
 function buildStoreUrl(slug: string): string {
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/store/${slug}`;
+    return `${window.location.origin}/stores/${slug}`;
   }
-  return `/store/${slug}`;
+  return `/stores/${slug}`;
 }
 
 function buildWhatsAppShareUrl(storeUrl: string, businessName: string): string {

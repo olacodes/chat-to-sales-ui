@@ -11,7 +11,7 @@ import type { TraderStoreOut } from '../types';
 export const storeApi = {
   async get(slug: string, signal?: AbortSignal): Promise<TraderStoreOut> {
     const res = await fetch(
-      `${BASE_URL}/api/v1/store/${encodeURIComponent(slug)}`,
+      `${BASE_URL}/api/v1/stores/${encodeURIComponent(slug)}`,
       { signal },
     );
     if (!res.ok) {

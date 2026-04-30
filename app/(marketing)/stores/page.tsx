@@ -40,7 +40,7 @@ function getCategoryMeta(category: string) {
 
 async function getStores(): Promise<StoreListItem[]> {
   try {
-    const res = await fetch(`${BASE_URL}/api/v1/store`, {
+    const res = await fetch(`${BASE_URL}/api/v1/stores`, {
       next: { revalidate: 120 },
     });
     if (!res.ok) return [];
@@ -79,7 +79,7 @@ export default async function StoreDirectoryPage() {
     <div style={{ backgroundColor: 'var(--ds-bg-base)', minHeight: '100vh' }}>
       <Navbar />
 
-      <main className="mx-auto max-w-4xl px-4 py-12">
+      <main className="mx-auto max-w-4xl px-4 pt-24 pb-12">
 
         {/* Header */}
         <div className="mb-10 text-center">
@@ -155,7 +155,7 @@ export default async function StoreDirectoryPage() {
                 {categoryStores.map((store) => (
                   <Link
                     key={store.store_slug}
-                    href={`/store/${store.store_slug}`}
+                    href={`/stores/${store.store_slug}`}
                     className="group rounded-xl px-5 py-4 transition-all hover:shadow-md active:scale-[0.99]"
                     style={{
                       border: '1px solid var(--ds-border-base)',
@@ -188,19 +188,19 @@ export default async function StoreDirectoryPage() {
           <div
             className="mt-6 rounded-xl px-6 py-8 text-center"
             style={{
-              background: 'linear-gradient(135deg, #dcfce7 0%, var(--ds-bg-surface) 100%)',
-              border: '1px solid #bbf7d0',
+              border: '1px solid var(--ds-border-base)',
+              backgroundColor: 'var(--ds-bg-surface)',
             }}
           >
             <p
               className="text-base font-bold"
-              style={{ color: '#166534' }}
+              style={{ color: 'var(--ds-text-primary)' }}
             >
               Want your store here?
             </p>
             <p
               className="mt-1 text-sm"
-              style={{ color: '#15803d' }}
+              style={{ color: 'var(--ds-text-secondary)' }}
             >
               Set up in under a minute. Start selling on WhatsApp today.
             </p>

@@ -11,6 +11,7 @@ import { restoreSession } from '@/lib/auth/service';
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: 'Product', href: '/product' },
   { label: 'Features', href: '/features' },
+  { label: 'Stores', href: '/stores' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Blog', href: '/blog' },
 ];

@@ -47,7 +47,7 @@ export default function StoreNotFound() {
           </Link>
 
           <Link
-            href="/store"
+            href="/stores"
             className="text-sm font-medium transition-opacity hover:opacity-70"
             style={{ color: 'var(--ds-accent-text)' }}
           >
