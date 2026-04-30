@@ -1,16 +1,15 @@
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { Navbar } from '@/components/marketing/Navbar';
 
 export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div
-      className="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6"
+      className="flex min-h-screen flex-col"
       style={{ backgroundColor: 'var(--ds-bg-base)' }}
     >
-      {/* Theme toggle — top-right corner */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
+      <Navbar />
+      <div className="flex flex-1 items-center justify-center px-4 py-10 pt-24 sm:px-6">
+        {children}
       </div>
-      {children}
     </div>
   );
 }
