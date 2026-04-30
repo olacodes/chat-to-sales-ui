@@ -211,13 +211,15 @@ export function Sidebar({ isOpen, onClose }: Readonly<SidebarProps>) {
           className="flex h-14 items-center gap-1.5 px-4"
           style={{ borderBottom: '1px solid var(--ds-sidebar-border)' }}
         >
-          <AppIcon size={28} />
-          <span
-            className="flex-1 text-sm font-bold tracking-tight"
-            style={{ color: 'var(--ds-text-primary)' }}
-          >
-            ChatToSales
-          </span>
+          <Link href="/" className="flex items-center gap-1.5 flex-1 min-w-0">
+            <AppIcon size={28} />
+            <span
+              className="text-sm font-bold tracking-tight"
+              style={{ color: 'var(--ds-text-primary)' }}
+            >
+              ChatToSales
+            </span>
+          </Link>
           {/* Close button — mobile only */}
           <button
             type="button"
