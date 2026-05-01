@@ -192,12 +192,16 @@ export function useMetaEmbeddedSignup() {
 
       let data: WaSignupMessage;
       try {
-        data = JSON.parse(event.data as string) as WaSignupMessage;
+        // Meta may send event.data as a JSON string or as a plain object
+        data =
+          typeof event.data === 'string'
+            ? (JSON.parse(event.data) as WaSignupMessage)
+            : (event.data as WaSignupMessage);
       } catch {
         return; // Non-JSON frame (e.g. heartbeat) — ignore
       }
 
-      if (data.type !== 'WA_EMBEDDED_SIGNUP') return;
+      if (!data || data.type !== 'WA_EMBEDDED_SIGNUP') return;
 
       if (data.event === 'FINISH') {
         pendingAssetRef.current = {
