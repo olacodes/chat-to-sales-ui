@@ -5,8 +5,27 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import { ThemeProvider, THEME_STORAGE_KEY } from '@/components/providers/ThemeProvider';
 
 export const metadata: Metadata = {
-  title: 'ChatToSales',
-  description: 'Real-time conversational commerce dashboard',
+  title: {
+    default: 'ChatToSales — Turn WhatsApp chats into sales',
+    template: '%s | ChatToSales',
+  },
+  description:
+    'ChatToSales helps Nigerian traders sell on WhatsApp. Set up your store, list products, and receive orders — all through WhatsApp.',
+  metadataBase: new URL('https://chattosales.com'),
+  openGraph: {
+    title: 'ChatToSales — Turn WhatsApp chats into sales',
+    description:
+      'ChatToSales helps Nigerian traders sell on WhatsApp. Set up your store, list products, and receive orders — all through WhatsApp.',
+    url: 'https://chattosales.com',
+    siteName: 'ChatToSales',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ChatToSales — Turn WhatsApp chats into sales',
+    description:
+      'ChatToSales helps Nigerian traders sell on WhatsApp. Set up your store, list products, and receive orders — all through WhatsApp.',
+  },
 };
 
 // Tenant identity is resolved after login via the auth store — no env var needed here.
