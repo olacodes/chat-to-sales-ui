@@ -1,4 +1,6 @@
 import { ImageResponse } from 'next/og';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 export const runtime = 'nodejs';
 export const alt = 'ChatToSales — Turn WhatsApp chats into sales';
@@ -6,6 +8,9 @@ export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 export default async function OGImage() {
+  const iconBytes = await readFile(join(process.cwd(), 'public', 'chattosales-icon.png'));
+  const iconBase64 = `data:image/png;base64,${iconBytes.toString('base64')}`;
+
   return new ImageResponse(
     (
       <div
@@ -20,17 +25,14 @@ export default async function OGImage() {
           gap: '48px',
         }}
       >
-        {/* Icon */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://chattosales.com/chattosales-icon.png"
+          src={iconBase64}
           alt=""
           width={220}
           height={220}
           style={{ borderRadius: '32px' }}
         />
-
-        {/* Text */}
         <div
           style={{
             display: 'flex',
@@ -44,6 +46,7 @@ export default async function OGImage() {
               fontWeight: 800,
               color: '#ffffff',
               lineHeight: 1.1,
+              display: 'flex',
             }}
           >
             ChatToSales
@@ -55,11 +58,12 @@ export default async function OGImage() {
               color: '#a3d9a3',
               lineHeight: 1.4,
               maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
-            Turn WhatsApp chats into sales.
-            <br />
-            Set up your store. List products. Receive orders.
+            <span>Turn WhatsApp chats into sales.</span>
+            <span>Set up your store. List products. Receive orders.</span>
           </div>
         </div>
       </div>
