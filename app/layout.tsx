@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     description:
       'ChatToSales helps Nigerian traders sell on WhatsApp. Set up your store, list products, and receive orders — all through WhatsApp.',
   },
+  verification: {
+    google: 'Usc0KREYyyI-S5BtkvAcJtg71RKOqpgZxT0c3YVWtEw',
+  },
 };
 
 // Tenant identity is resolved after login via the auth store — no env var needed here.
