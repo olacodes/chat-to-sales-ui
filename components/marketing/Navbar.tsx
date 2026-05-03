@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -18,6 +19,7 @@ const NAV_LINKS: { label: string; href: string }[] = [
 
 export function Navbar() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -65,18 +67,31 @@ export function Navbar() {
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-sm font-medium transition-colors duration-150"
-              style={{ color: 'var(--ds-text-secondary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
+            return (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="relative text-sm font-medium transition-colors duration-150 pb-0.5"
+                style={{ color: isActive ? 'var(--ds-brand-bg)' : 'var(--ds-text-secondary)' }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--ds-text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--ds-text-secondary)';
+                }}
+              >
+                {link.label}
+                {isActive && (
+                  <span
+                    className="absolute left-0 right-0 -bottom-1 h-0.5 rounded-full"
+                    style={{ backgroundColor: 'var(--ds-brand-bg)' }}
+                  />
+                )}
+              </Link>
+            );
+          })}
         </div>
 
         {/* CTAs */}
@@ -157,17 +172,20 @@ export function Navbar() {
           className="md:hidden border-t px-6 py-4 flex flex-col gap-4"
           style={{ backgroundColor: 'var(--ds-bg-surface)', borderColor: 'var(--ds-border-base)' }}
         >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-sm font-medium"
-              style={{ color: 'var(--ds-text-secondary)' }}
-              onClick={() => setMenuOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
+            return (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-sm font-medium"
+                style={{ color: isActive ? 'var(--ds-brand-bg)' : 'var(--ds-text-secondary)' }}
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <div className="flex gap-3 pt-2">
             {mounted && isAuthenticated ? (
               <Link
