@@ -226,7 +226,7 @@ export default function TermsOfServicePage() {
             <p>
               For questions about these terms, contact us at{' '}
               <span className="font-medium" style={{ color: 'var(--ds-text-primary)' }}>
-                hello@chattosales.com
+                info.chattosales@gmail.com
               </span>.
             </p>
           </section>

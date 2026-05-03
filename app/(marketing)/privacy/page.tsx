@@ -176,7 +176,7 @@ export default function PrivacyPolicyPage() {
               To exercise any of these rights, send a WhatsApp message to our platform
               number or email us at{' '}
               <span className="font-medium" style={{ color: 'var(--ds-text-primary)' }}>
-                privacy@chattosales.com
+                info.chattosales@gmail.com
               </span>.
             </p>
           </section>
@@ -211,7 +211,7 @@ export default function PrivacyPolicyPage() {
               If you have questions about this privacy policy or how we handle your data,
               contact us at{' '}
               <span className="font-medium" style={{ color: 'var(--ds-text-primary)' }}>
-                privacy@chattosales.com
+                info.chattosales@gmail.com
               </span>.
             </p>
           </section>
