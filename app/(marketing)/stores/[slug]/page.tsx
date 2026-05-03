@@ -38,10 +38,22 @@ export default async function StorePage({ params }: PageProps) {
   if (!store) notFound();
 
   return (
-    <div style={{ backgroundColor: 'var(--ds-bg-base)', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: 'var(--ds-bg-base)', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Background gradient blob — matches marketing pages */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          background:
+            'radial-gradient(ellipse 60% 50% at 50% 100%, var(--ds-brand-bg-soft) 0%, transparent 70%)',
+        }}
+      />
+
       <Navbar />
 
-      <main className="mx-auto max-w-2xl px-4 pt-24 pb-12">
+      <main className="relative mx-auto max-w-2xl px-4 pt-24 pb-12">
 
         {/* ── Store header ─────────────────────────────────────────────────── */}
         <div
