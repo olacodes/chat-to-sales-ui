@@ -76,10 +76,20 @@ export default async function StoreDirectoryPage() {
   const grouped = groupByCategory(stores);
 
   return (
-    <div style={{ backgroundColor: 'var(--ds-bg-base)', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: 'var(--ds-bg-base)', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Background gradient glow — matches Features / Product pages */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 70% 55% at 50% 0%, var(--ds-brand-bg-soft) 0%, transparent 65%)',
+        }}
+      />
+
       <Navbar />
 
-      <main className="mx-auto max-w-4xl px-4 pt-24 pb-12">
+      <main className="relative mx-auto max-w-4xl px-4 pt-24 pb-12">
 
         {/* Header */}
         <div className="mb-10 text-center">
